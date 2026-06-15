@@ -20,12 +20,56 @@ export type Task = {
   projects?: Pick<Project, "name"> | null;
 };
 
+export type Document = {
+  id: string;
+  user_id: string;
+  title: string;
+  document_type: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Material = {
+  id: string;
+  user_id: string;
+  document_id: string;
+  title: string;
+  material_type: string;
+  file_url_or_path: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Action = {
+  id: string;
+  user_id: string;
+  document_id: string;
+  material_id: string | null;
+  title: string;
+  done: boolean;
+  today: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  materials?: Pick<Material, "id" | "title"> | null;
+};
+
 export type WorkflowTemplate = {
   id: string;
   user_id: string;
   name: string;
   steps: { title: string }[];
   created_at: string;
+};
+
+export type WorkflowTemplateV2 = {
+  id: string;
+  user_id: string;
+  document_type: string;
+  action_titles: string[];
+  created_at: string;
+  updated_at: string;
 };
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {

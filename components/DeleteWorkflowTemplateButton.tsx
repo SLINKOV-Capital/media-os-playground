@@ -1,0 +1,18 @@
+import { deleteWorkflowTemplate } from "@/app/templates/actions";
+
+type DeleteWorkflowTemplateButtonProps = {
+  id: string;
+};
+
+export function DeleteWorkflowTemplateButton({
+  id,
+}: DeleteWorkflowTemplateButtonProps) {
+  return (
+    <form action={deleteWorkflowTemplate} className="inline-form">
+      <input type="hidden" name="id" value={id} />
+      <button type="submit" className="text-button">
+        Удалить
+      </button>
+    </form>
+  );
+}

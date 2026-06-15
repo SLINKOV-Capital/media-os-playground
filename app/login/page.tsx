@@ -29,7 +29,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/today");
+    router.push("/documents");
     router.refresh();
   }
 

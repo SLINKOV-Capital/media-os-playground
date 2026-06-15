@@ -10,6 +10,12 @@ export function Nav() {
         <Link href="/today" className="nav-link">
           Сегодня
         </Link>
+        <Link href="/documents" className="nav-link">
+          Документы
+        </Link>
+        <Link href="/templates" className="nav-link">
+          Шаблоны
+        </Link>
         <form action="/auth/logout" method="post" className="logout-form">
           <button type="submit">Выйти</button>
         </form>

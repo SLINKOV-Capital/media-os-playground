@@ -1,25 +1,18 @@
-import { CreateTaskForm } from "@/components/CreateTaskForm";
+import { toggleActionDone, toggleActionToday } from "@/app/documents/actions";
 import { Nav } from "@/components/Nav";
-import { TaskBlock } from "@/components/TaskBlock";
 import { createClient } from "@/lib/supabase/server";
-import type { Task, TaskStatus } from "@/lib/types";
+import type { Action, Document } from "@/lib/types";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
-async function fetchTasksByStatus(status: TaskStatus): Promise<Task[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("status", status)
-    .order("updated_at", { ascending: false });
+type FocusAction = Action & {
+  documents: Pick<Document, "id" | "title">;
+};
 
-  if (error) {
-    console.error(`Failed to fetch tasks (${status}):`, error.message);
-    return [];
-  }
-
-  return (data ?? []) as Task[];
-}
+type DocumentGroup = {
+  document: Pick<Document, "id" | "title">;
+  actions: FocusAction[];
+};
 
 export default async function TodayPage() {
   const supabase = await createClient();
@@ -31,22 +24,112 @@ export default async function TodayPage() {
     redirect("/login");
   }
 
-  const [decisionTasks, stuckTasks, letGoTasks] = await Promise.all([
-    fetchTasksByStatus("decision"),
-    fetchTasksByStatus("stuck"),
-    fetchTasksByStatus("let_go"),
-  ]);
+  const { data, error } = await supabase
+    .from("actions")
+    .select("*, documents(id, title)")
+    .eq("today", true)
+    .eq("user_id", user.id)
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error("Failed to fetch focus actions:", error.message);
+  }
+
+  const focusActions = (data ?? []) as FocusAction[];
+  const groups = groupByDocument(focusActions);
 
   return (
     <div className="page">
       <Nav />
       <header className="page-header">
-        <h1>Что мне делать сегодня?</h1>
+        <h1>Сегодня</h1>
+        <p className="page-subtitle">Действия в фокусе из разных документов</p>
       </header>
-      <CreateTaskForm />
-      <TaskBlock title="Требует решения" tasks={decisionTasks} />
-      <TaskBlock title="Застряло" tasks={stuckTasks} />
-      <TaskBlock title="Можно отпустить" tasks={letGoTasks} />
+
+      {groups.length === 0 ? (
+        <p className="empty">
+          Ничего в фокусе. Откройте документ и нажмите «В фокус» у нужного
+          действия.
+        </p>
+      ) : (
+        groups.map((group) => (
+          <section key={group.document.id} className="doc-block">
+            <h2 className="doc-block-title">
+              Документ:{" "}
+              <Link href={`/documents/${group.document.id}`} className="doc-link">
+                {group.document.title}
+              </Link>
+            </h2>
+            <ul className="action-list">
+              {group.actions.map((action) => (
+                <li
+                  key={action.id}
+                  className={`action-item today-action-item${
+                    action.done ? " is-done" : ""
+                  }`}
+                >
+                  <div className="action-controls">
+                    <form action={toggleActionDone} className="inline-form">
+                      <input type="hidden" name="id" value={action.id} />
+                      <input
+                        type="hidden"
+                        name="document_id"
+                        value={action.document_id}
+                      />
+                      <input
+                        type="hidden"
+                        name="done"
+                        value={action.done ? "false" : "true"}
+                      />
+                      <button type="submit" className="action-toggle-button">
+                        {action.done ? "☑" : "☐"} Готово
+                      </button>
+                    </form>
+
+                    <form action={toggleActionToday} className="inline-form">
+                      <input type="hidden" name="id" value={action.id} />
+                      <input
+                        type="hidden"
+                        name="document_id"
+                        value={action.document_id}
+                      />
+                      <input type="hidden" name="today" value="false" />
+                      <button type="submit" className="text-button">
+                        Убрать из фокуса
+                      </button>
+                    </form>
+                  </div>
+                  <p className="action-title-line">{action.title}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      )}
     </div>
   );
+}
+
+function groupByDocument(actions: FocusAction[]): DocumentGroup[] {
+  const map = new Map<string, DocumentGroup>();
+
+  for (const action of actions) {
+    const document = action.documents;
+    if (!document) {
+      continue;
+    }
+
+    const existing = map.get(document.id);
+    if (existing) {
+      existing.actions.push(action);
+      continue;
+    }
+
+    map.set(document.id, {
+      document,
+      actions: [action],
+    });
+  }
+
+  return Array.from(map.values());
 }

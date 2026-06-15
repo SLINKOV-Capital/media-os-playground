@@ -1,0 +1,49 @@
+import { WorkflowTemplateForm } from "@/components/WorkflowTemplateForm";
+import { Nav } from "@/components/Nav";
+import { createClient } from "@/lib/supabase/server";
+import type { WorkflowTemplateV2 } from "@/lib/types";
+import { notFound, redirect } from "next/navigation";
+
+type EditTemplatePageProps = {
+  params: Promise<{ id: string }>;
+};
+
+export default async function EditTemplatePage({ params }: EditTemplatePageProps) {
+  const { id } = await params;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data, error } = await supabase
+    .from("workflow_templates_v2")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to fetch workflow template:", error.message);
+    notFound();
+  }
+
+  if (!data) {
+    notFound();
+  }
+
+  const template = data as WorkflowTemplateV2;
+
+  return (
+    <div className="page">
+      <Nav />
+      <header className="page-header">
+        <h1>Редактировать шаблон</h1>
+        <p className="page-subtitle">{template.document_type}</p>
+      </header>
+      <WorkflowTemplateForm template={template} />
+    </div>
+  );
+}
