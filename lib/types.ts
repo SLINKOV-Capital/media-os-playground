@@ -50,6 +50,7 @@ export type Action = {
   done: boolean;
   today: boolean;
   sort_order: number;
+  today_sort_order: number | null;
   created_at: string;
   updated_at: string;
   materials?: Pick<Material, "id" | "title"> | null;

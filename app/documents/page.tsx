@@ -36,7 +36,7 @@ export default async function DocumentsPage() {
               Главные объекты работы в Media OS
             </p>
           </div>
-          <Link href="/documents/new" className="ghost-button">
+          <Link href="/documents/new" className="notion-new-button">
             + Новый документ
           </Link>
         </header>
@@ -49,34 +49,28 @@ export default async function DocumentsPage() {
             </Link>
           </div>
         ) : (
-          <div className="database-wrap">
-            <table className="database-table">
-              <thead>
-                <tr>
-                  <th>Название</th>
-                  <th>Тип</th>
-                  <th>Обновлён</th>
-                </tr>
-              </thead>
-              <tbody>
-                {documents.map((document) => (
-                  <tr key={document.id}>
-                    <td>
-                      <Link
-                        href={`/documents/${document.id}`}
-                        className="database-link"
-                      >
-                        {document.title}
-                      </Link>
-                    </td>
-                    <td className="database-muted">{document.document_type}</td>
-                    <td className="database-muted">
-                      {formatDate(document.updated_at)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="collection-list">
+            <div
+              className="collection-header collection-header-documents"
+              aria-hidden="true"
+            >
+              <span>Название</span>
+              <span>Тип</span>
+              <span>Обновлён</span>
+            </div>
+            {documents.map((document) => (
+              <Link
+                key={document.id}
+                href={`/documents/${document.id}`}
+                className="collection-row collection-row-documents"
+              >
+                <span className="collection-primary">{document.title}</span>
+                <span className="collection-meta">{document.document_type}</span>
+                <span className="collection-meta">
+                  {formatDate(document.updated_at)}
+                </span>
+              </Link>
+            ))}
           </div>
         )}
       </div>

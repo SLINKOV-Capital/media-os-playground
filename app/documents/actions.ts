@@ -297,9 +297,35 @@ export async function toggleActionToday(formData: FormData): Promise<void> {
     return;
   }
 
+  const updatePayload: {
+    today: boolean;
+    today_sort_order: number | null;
+  } = {
+    today,
+    today_sort_order: null,
+  };
+
+  if (today) {
+    const { data: lastFocusAction, error: sortError } = await supabase
+      .from("actions")
+      .select("today_sort_order")
+      .eq("user_id", user.id)
+      .eq("today", true)
+      .order("today_sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (sortError) {
+      console.error("Failed to fetch today sort order:", sortError.message);
+      return;
+    }
+
+    updatePayload.today_sort_order = (lastFocusAction?.today_sort_order ?? -1) + 1;
+  }
+
   const { error } = await supabase
     .from("actions")
-    .update({ today })
+    .update(updatePayload)
     .eq("id", id)
     .eq("user_id", user.id)
     .eq("document_id", documentId);
@@ -383,6 +409,66 @@ export async function reorderActions(
   }
 
   revalidateDocument(documentId);
+}
+
+export async function reorderTodayActions(
+  orderedIds: string[]
+): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (orderedIds.length === 0) {
+    return;
+  }
+
+  const { data: existingActions, error: fetchError } = await supabase
+    .from("actions")
+    .select("id")
+    .eq("today", true)
+    .eq("user_id", user.id);
+
+  if (fetchError) {
+    console.error("Failed to fetch today actions for reorder:", fetchError.message);
+    return;
+  }
+
+  const existingIds = new Set((existingActions ?? []).map((action) => action.id));
+
+  if (orderedIds.length !== existingIds.size) {
+    return;
+  }
+
+  for (const id of orderedIds) {
+    if (!existingIds.has(id)) {
+      return;
+    }
+  }
+
+  const updates = orderedIds.map((id, index) =>
+    supabase
+      .from("actions")
+      .update({ today_sort_order: index })
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .eq("today", true)
+  );
+
+  const results = await Promise.all(updates);
+
+  for (const { error } of results) {
+    if (error) {
+      console.error("Failed to reorder today actions:", error.message);
+      return;
+    }
+  }
+
+  revalidatePath("/today");
 }
 
 export async function createMaterial(formData: FormData): Promise<void> {

@@ -47,7 +47,7 @@ a {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 12px 8px;
+  padding: 14px 10px 16px;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
 }
@@ -55,26 +55,32 @@ a {
 .sidebar-brand {
   display: block;
   padding: 6px 10px;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   font-size: 14px;
   font-weight: 600;
   color: var(--text);
   text-decoration: none;
+  border-radius: var(--radius);
+}
+
+.sidebar-brand:hover {
+  background: var(--bg-hover);
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .sidebar-link {
   display: block;
-  padding: 6px 10px;
+  padding: 7px 10px;
   border-radius: var(--radius);
   color: var(--text);
   text-decoration: none;
   font-size: 14px;
+  line-height: 1.4;
 }
 
 .sidebar-link:hover {
@@ -84,7 +90,7 @@ a {
 .sidebar-link.is-active {
   background: var(--accent-soft);
   color: var(--accent);
-  box-shadow: inset 2px 0 0 var(--accent);
+  font-weight: 500;
 }
 
 .sidebar-logout {
@@ -180,6 +186,27 @@ a {
   background: var(--bg-hover);
 }
 
+.notion-new-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 14px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.notion-new-button:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
 .text-link {
   font-size: 13px;
   color: var(--accent);
@@ -199,7 +226,119 @@ a {
   margin-bottom: 8px;
 }
 
-/* ── Database table (Notion-like) ── */
+/* ── Collection list (Notion-like database) ── */
+
+.collection-list {
+  margin-top: 4px;
+}
+
+.collection-header {
+  display: grid;
+  gap: 16px;
+  padding: 0 10px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.collection-header-documents {
+  grid-template-columns: minmax(0, 1fr) 160px 120px;
+}
+
+.collection-header-templates {
+  grid-template-columns: minmax(0, 1fr) 100px;
+}
+
+.collection-row {
+  display: grid;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border);
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+
+.collection-row:last-child {
+  border-bottom: none;
+}
+
+.collection-row-documents {
+  grid-template-columns: minmax(0, 1fr) 160px 120px;
+}
+
+.collection-row-documents:hover {
+  background: var(--bg-hover);
+}
+
+.collection-row-templates {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 0;
+}
+
+.collection-row-link {
+  display: grid;
+  gap: 16px;
+  align-items: center;
+  min-width: 0;
+  padding: 12px 10px;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+
+.collection-row-link-templates {
+  grid-template-columns: minmax(0, 1fr) 100px;
+}
+
+.collection-row-templates:hover .collection-row-link {
+  background: var(--bg-hover);
+}
+
+.collection-primary {
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.collection-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.collection-row-actions {
+  display: flex;
+  align-items: center;
+  padding-right: 10px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.collection-row-templates:hover .collection-row-actions {
+  opacity: 1;
+}
+
+.collection-delete-button {
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.collection-delete-button:hover {
+  color: #c04543;
+}
+
+/* ── Database table (legacy) ── */
 
 .database-wrap {
   border: 1px solid var(--border);
@@ -354,7 +493,161 @@ a {
   display: inline;
 }
 
-/* ── Legacy layout (today, document detail — UI-2 later) ── */
+/* ── Today (focus surface) ── */
+
+.today-list {
+  list-style: none;
+  margin-top: 8px;
+}
+
+.today-list.is-pending {
+  opacity: 0.7;
+}
+
+.today-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 6px;
+  border-radius: var(--radius);
+}
+
+.today-item:hover {
+  background: var(--bg-hover);
+}
+
+.today-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  opacity: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.today-item:hover .today-drag-handle {
+  opacity: 0.45;
+}
+
+.today-drag-handle:hover {
+  opacity: 0.75;
+}
+
+.today-drag-handle:active {
+  cursor: grabbing;
+}
+
+.today-item.is-dragging {
+  opacity: 0.35;
+}
+
+.today-item.is-drag-overlay {
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  opacity: 1;
+}
+
+.today-item.is-drag-overlay .today-drag-handle {
+  opacity: 0.75;
+}
+
+.today-item.is-done .today-action-title {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.today-done-form {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.today-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.today-action-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.today-action-context {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.today-doc-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.today-doc-link:hover {
+  text-decoration: underline;
+}
+
+.today-context-sep {
+  margin: 0 6px;
+  color: var(--text-muted);
+}
+
+.today-material-tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  vertical-align: baseline;
+  text-decoration: none;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.today-material-tag:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.today-unfocus-form {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.today-unfocus-button {
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease;
+}
+
+.today-item:hover .today-unfocus-button {
+  opacity: 0.55;
+}
+
+.today-unfocus-button:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+/* ── Legacy layout (document detail leftovers) ── */
 
 .page {
   max-width: 720px;
@@ -1007,6 +1300,7 @@ a {
   font: inherit;
   font-size: 11px;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .material-pill:hover {
@@ -1085,6 +1379,101 @@ a {
 .material-form-heading {
   margin-bottom: 8px;
   font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ── Material page ── */
+
+.material-page {
+  max-width: 720px;
+}
+
+.material-page-header {
+  margin: 8px 0 32px;
+}
+
+.material-page-title {
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.material-page-type {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.material-page-properties {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 40px;
+}
+
+.material-property {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+}
+
+.material-property:hover {
+  background: var(--bg-hover);
+}
+
+.material-property-label {
+  flex-shrink: 0;
+  width: 110px;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-top: 2px;
+}
+
+.material-property-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.material-property-notes {
+  white-space: pre-wrap;
+}
+
+.material-actions-list {
+  list-style: none;
+}
+
+.material-action-item {
+  padding: 8px 6px;
+  border-radius: var(--radius);
+}
+
+.material-action-item:hover {
+  background: var(--bg-hover);
+}
+
+.material-action-link {
+  font-size: 15px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.material-action-link:hover {
+  color: var(--accent);
+}
+
+.material-action-item.is-done .material-action-link {
+  text-decoration: line-through;
   color: var(--text-muted);
 }
 

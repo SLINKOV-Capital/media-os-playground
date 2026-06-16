@@ -36,7 +36,7 @@ export default async function TemplatesPage() {
               Workflow для типов документов
             </p>
           </div>
-          <Link href="/templates/new" className="ghost-button">
+          <Link href="/templates/new" className="notion-new-button">
             + Новый шаблон
           </Link>
         </header>
@@ -49,39 +49,35 @@ export default async function TemplatesPage() {
             </Link>
           </div>
         ) : (
-          <div className="database-wrap">
-            <table className="database-table">
-              <thead>
-                <tr>
-                  <th>Тип документа</th>
-                  <th>Действий</th>
-                  <th aria-label="Действия" />
-                </tr>
-              </thead>
-              <tbody>
-                {templates.map((template) => (
-                  <tr key={template.id}>
-                    <td>
-                      <span className="database-strong">
-                        {template.document_type}
-                      </span>
-                    </td>
-                    <td className="database-muted">
-                      {template.action_titles.length}
-                    </td>
-                    <td className="database-actions">
-                      <Link
-                        href={`/templates/${template.id}/edit`}
-                        className="text-link"
-                      >
-                        Редактировать
-                      </Link>
-                      <DeleteWorkflowTemplateButton id={template.id} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="collection-list">
+            <div
+              className="collection-header collection-header-templates"
+              aria-hidden="true"
+            >
+              <span>Тип документа</span>
+              <span>Действий</span>
+            </div>
+            {templates.map((template) => (
+              <div
+                key={template.id}
+                className="collection-row collection-row-templates"
+              >
+                <Link
+                  href={`/templates/${template.id}/edit`}
+                  className="collection-row-link collection-row-link-templates"
+                >
+                  <span className="collection-primary">
+                    {template.document_type}
+                  </span>
+                  <span className="collection-meta">
+                    {template.action_titles.length}
+                  </span>
+                </Link>
+                <div className="collection-row-actions">
+                  <DeleteWorkflowTemplateButton id={template.id} />
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

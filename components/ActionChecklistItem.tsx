@@ -12,6 +12,7 @@ import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useRef, useTransition, type CSSProperties } from "react";
 
 type ActionChecklistItemProps = {
@@ -203,18 +204,32 @@ export function ActionChecklistItem({
             >
               Без материала
             </button>
-            {materials.map((material) => (
-              <button
-                key={material.id}
-                type="button"
-                className={`material-pill${
-                  action.material_id === material.id ? " is-active" : ""
-                }`}
-                onClick={() => handleMaterialSelect(material.id)}
-              >
-                {material.title}
-              </button>
-            ))}
+            {materials.map((material) => {
+              const isActive = action.material_id === material.id;
+
+              if (isActive) {
+                return (
+                  <Link
+                    key={material.id}
+                    href={`/materials/${material.id}`}
+                    className="material-pill is-active"
+                  >
+                    {material.title}
+                  </Link>
+                );
+              }
+
+              return (
+                <button
+                  key={material.id}
+                  type="button"
+                  className="material-pill"
+                  onClick={() => handleMaterialSelect(material.id)}
+                >
+                  {material.title}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

@@ -34,7 +34,7 @@
 
 | Файл | Операции |
 |------|----------|
-| `app/documents/actions.ts` | documents, actions, materials, generateActions, reorderActions, toggleActionDone, toggleActionToday |
+| `app/documents/actions.ts` | documents, actions, materials, generateActions, reorderActions, reorderTodayActions, toggleActionDone, toggleActionToday |
 | `app/templates/actions.ts` | workflow_templates_v2 CRUD |
 
 После мутаций — `revalidatePath` для затронутых маршрутов (`/documents`, `/documents/[id]`, `/today`, `/templates`).
@@ -55,6 +55,7 @@
 - `title`, `document_id`, `material_id` (nullable)
 - `done` boolean, `today` boolean
 - `sort_order` integer (0-based, порядок в документе)
+- `today_sort_order` integer nullable (порядок на `/today`, только при `today = true`)
 - `user_id`, timestamps
 
 **workflow_templates_v2**
@@ -101,3 +102,4 @@
 3. `003_actions_done.sql` — `actions.done`
 4. `004_actions_today.sql` — `actions.today`
 5. `005_actions_sort_order.sql` — `actions.sort_order` (drag-and-drop reorder)
+6. `006_actions_today_sort_order.sql` — `actions.today_sort_order` (reorder на `/today`)

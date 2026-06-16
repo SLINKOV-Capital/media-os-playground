@@ -10,7 +10,7 @@ export function DeleteWorkflowTemplateButton({
   return (
     <form action={deleteWorkflowTemplate} className="inline-form">
       <input type="hidden" name="id" value={id} />
-      <button type="submit" className="text-button">
+      <button type="submit" className="collection-delete-button">
         Удалить
       </button>
     </form>
