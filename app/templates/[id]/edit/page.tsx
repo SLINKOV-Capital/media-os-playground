@@ -1,7 +1,8 @@
 import { WorkflowTemplateForm } from "@/components/WorkflowTemplateForm";
-import { Nav } from "@/components/Nav";
+import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
 import type { WorkflowTemplateV2 } from "@/lib/types";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 type EditTemplatePageProps = {
@@ -37,13 +38,17 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
   const template = data as WorkflowTemplateV2;
 
   return (
-    <div className="page">
-      <Nav />
-      <header className="page-header">
-        <h1>Редактировать шаблон</h1>
-        <p className="page-subtitle">{template.document_type}</p>
-      </header>
-      <WorkflowTemplateForm template={template} />
-    </div>
+    <AppShell>
+      <div className="content-page content-page-narrow">
+        <Link href="/templates" className="breadcrumb-link">
+          ← Шаблоны
+        </Link>
+        <header className="content-header content-header-stack">
+          <h1 className="content-title">Редактировать шаблон</h1>
+          <p className="content-subtitle">{template.document_type}</p>
+        </header>
+        <WorkflowTemplateForm template={template} />
+      </div>
+    </AppShell>
   );
 }
