@@ -120,6 +120,10 @@ Notion · Craft · Capacities · Reflect
 
 
 
+**Адаптив:** правила layout — `docs/responsive-layout.md` (breakpoint 1024px, overflow, min-width: 0).
+
+
+
 | Token | Значение | Назначение |
 
 |-------|----------|------------|
