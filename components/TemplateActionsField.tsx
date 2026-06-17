@@ -39,9 +39,10 @@ export function TemplateActionsField({
   }
 
   return (
-    <div className="form-field template-actions-field">
-      <span className="form-field-label">Действия</span>
-      <p className="form-field-hint">Шаги workflow — по одному на строку</p>
+    <section className="doc-section template-actions-section">
+      <div className="section-header">
+        <h2 className="section-label">Действия</h2>
+      </div>
 
       <ul className="template-action-list">
         {lines.map((line, index) => (
@@ -68,7 +69,11 @@ export function TemplateActionsField({
         ))}
       </ul>
 
-      <button type="button" className="template-action-add" onClick={addLine}>
+      <button
+        type="button"
+        className="notion-new-button template-action-add"
+        onClick={addLine}
+      >
         + Добавить шаг
       </button>
 
@@ -80,6 +85,6 @@ export function TemplateActionsField({
         className="template-actions-serialized"
         value={serialized}
       />
-    </div>
+    </section>
   );
 }

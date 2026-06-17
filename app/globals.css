@@ -1200,6 +1200,10 @@ a {
     gap: 24px;
   }
 
+  .template-page-form {
+    gap: 24px;
+  }
+
   .content-header {
     flex-direction: column;
     align-items: stretch;
@@ -1325,6 +1329,7 @@ a {
   .notion-property {
     flex-direction: column;
     align-items: stretch;
+    gap: 4px;
   }
 
   .form-field-control {
@@ -1338,14 +1343,18 @@ a {
   .material-property-label,
   .notion-property-label {
     width: auto;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    padding: 8px 10px;
+    padding: 0 4px;
   }
 
   .notion-property-value,
   .material-property-value {
-    padding: 10px;
+    padding: 0 4px 2px;
+  }
+
+  .notion-property-value input,
+  .notion-property-value textarea,
+  .notion-property-value select {
+    font-size: 16px;
   }
 
   .notion-input-title {
@@ -1417,7 +1426,7 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .section-label {
@@ -1444,21 +1453,27 @@ a {
 
 .workflow-callout {
   margin: 0;
-  padding: 16px 18px;
-  border-radius: var(--radius);
-  background: var(--bg-secondary);
+  padding: 0;
+  background: transparent;
 }
 
 .workflow-callout-title {
+  margin: 0 0 8px;
   font-size: 13px;
-  font-weight: 500;
-  margin-bottom: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
 }
 
 .workflow-callout-list {
-  margin: 0 0 14px 18px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.workflow-callout-list li {
+  padding: 4px 0;
 }
 
 /* ── Checklist actions ── */
@@ -1691,79 +1706,106 @@ a {
 
 /* ── Materials on document page ── */
 
-.material-cards {
+.material-rows {
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  margin: 0 0 4px;
 }
 
-.material-card {
-  padding: 12px;
+.material-row {
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
   border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
 }
 
-.material-card-title {
+.material-row:first-child {
+  padding-top: 4px;
+}
+
+.material-row:hover {
+  background: var(--bg-hover);
+}
+
+.material-row-title {
   display: inline-block;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1.4;
   color: var(--text);
   text-decoration: none;
 }
 
-.material-card-title:hover {
+.material-row-title:hover {
   color: var(--accent);
 }
 
-.material-card-type {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.material-card-meta,
-.material-card-notes {
-  margin-top: 6px;
+.material-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
   font-size: 12px;
   color: var(--text-muted);
-  overflow-wrap: anywhere;
 }
 
-.material-card-meta-muted {
+.material-row-type {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.material-row-sep {
+  opacity: 0.5;
+}
+
+.material-row-url {
+  overflow-wrap: anywhere;
+  opacity: 0.72;
+}
+
+.material-row-notes {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--text-muted);
   opacity: 0.85;
 }
 
-.material-form {
-  margin-top: 0;
+.material-add-trigger {
+  margin-top: 4px;
 }
 
-.material-form-panel {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border);
+.material-add-form {
+  margin-top: 8px;
 }
 
-.material-form-title {
-  margin-bottom: 16px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
+.material-add-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-left: 4px;
 }
 
-.material-form-heading {
-  margin-bottom: 8px;
-  font-size: 13px;
-  color: var(--text-muted);
+.template-page-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.template-actions-section {
+  margin: 0;
+}
+
+.page-form-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
 }
 
 /* ── Material page ── */
@@ -1935,29 +1977,25 @@ a {
 }
 
 .template-form {
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 .template-action-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg);
-  overflow: hidden;
 }
 
 .template-action-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 6px 4px;
+  border-radius: var(--radius);
 }
 
-.template-action-item:last-child {
-  border-bottom: none;
+.template-action-item:hover {
+  background: var(--bg-hover);
 }
 
 .template-action-marker {
@@ -2001,6 +2039,12 @@ a {
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
+  opacity: 0;
+}
+
+.template-action-item:hover .template-action-remove,
+.template-action-remove:focus {
+  opacity: 1;
 }
 
 .template-action-remove:hover {
@@ -2009,18 +2053,7 @@ a {
 }
 
 .template-action-add {
-  margin-top: 10px;
-  padding: 4px 0;
-  border: none;
-  background: none;
-  color: var(--text-muted);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.template-action-add:hover {
-  color: var(--text);
+  margin-top: 4px;
 }
 
 .template-actions-serialized {
@@ -2041,17 +2074,18 @@ a {
 
 .notion-property {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
+  gap: 16px;
   min-height: 34px;
-  margin-bottom: 8px;
+  padding: 6px 4px;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  overflow: hidden;
+  border: none;
+  background: transparent;
 }
 
-.notion-property:hover {
-  background: var(--bg-secondary);
+.notion-property:hover,
+.notion-property:focus-within {
+  background: var(--bg-hover);
 }
 
 .notion-property-label {
@@ -2060,25 +2094,25 @@ a {
   align-items: flex-start;
   justify-content: center;
   gap: 2px;
-  width: 128px;
+  width: 140px;
   flex-shrink: 0;
-  padding: 8px 10px;
+  padding: 4px 8px 4px 4px;
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
 }
 
 .notion-property-label-hint {
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
+  font-size: 11px;
   color: var(--text-muted);
-  opacity: 0.8;
+  opacity: 0.65;
+}
+
+.notion-property-optional-tag {
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.5;
 }
 
 .notion-property-value {
@@ -2088,8 +2122,7 @@ a {
   justify-content: center;
   flex: 1;
   min-width: 0;
-  padding: 8px 10px;
-  background: var(--bg);
+  padding: 2px 4px 2px 0;
 }
 
 .notion-property-value input,
@@ -2116,17 +2149,18 @@ a {
   margin-top: 6px;
   font-size: 11px;
   color: var(--text-muted);
+  opacity: 0.65;
 }
 
 .notion-property-value input::placeholder,
 .notion-property-value textarea::placeholder {
   color: var(--text-muted);
-  opacity: 0.75;
+  opacity: 0.45;
 }
 
 .notion-property-optional .notion-property-value input::placeholder,
 .notion-property-optional .notion-property-value textarea::placeholder {
-  font-style: italic;
+  font-style: normal;
 }
 
 .notion-form-page .form-actions {
@@ -2138,10 +2172,6 @@ a {
 }
 
 .notion-property-textarea .notion-property-label {
-  padding-top: 10px;
-}
-
-.material-form-submit {
-  margin-top: 12px;
+  padding-top: 6px;
 }
 

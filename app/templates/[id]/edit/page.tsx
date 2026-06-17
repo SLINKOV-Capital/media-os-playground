@@ -48,18 +48,22 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
 
   return (
     <AppShell>
-      <div className="content-page content-page-narrow">
+      <div className="content-page content-page-narrow template-page">
         <Link href="/templates" className="breadcrumb-link">
           ← Шаблоны
         </Link>
-        <header className="content-header content-header-stack">
-          <h1 className="content-title">Редактировать шаблон</h1>
-          <p className="content-subtitle">{template.document_type}</p>
-        </header>
-        <WorkflowTemplateForm
-          template={template}
-          documentTypes={documentTypes}
-        />
+
+        <div className="doc-page-stack">
+          <header className="doc-page-header">
+            <h1 className="doc-page-title">{template.document_type}</h1>
+            <p className="doc-page-type">шаблон workflow</p>
+          </header>
+
+          <WorkflowTemplateForm
+            template={template}
+            documentTypes={documentTypes}
+          />
+        </div>
       </div>
     </AppShell>
   );

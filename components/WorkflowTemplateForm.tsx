@@ -25,35 +25,36 @@ export function WorkflowTemplateForm({
   ].sort((a, b) => a.localeCompare(b, "ru"));
 
   return (
-    <form action={action} className="notion-form notion-form-page template-form">
+    <form action={action} className="notion-form notion-form-page template-page-form">
       {template && <input type="hidden" name="id" value={template.id} />}
 
-      <div className="form-field">
-        <label htmlFor="document_type" className="form-field-label">
+      <div className="notion-property">
+        <label htmlFor="document_type" className="notion-property-label">
           Тип документа
+          <span className="notion-property-label-hint">один шаблон на тип</span>
         </label>
-        <p className="form-field-hint">Один шаблон на тип документа</p>
-        <select
-          id="document_type"
-          name="document_type"
-          required
-          className="form-field-control"
-          defaultValue={template?.document_type ?? ""}
-        >
-          <option value="" disabled>
-            Выберите тип
-          </option>
-          {types.map((type) => (
-            <option key={type} value={type}>
-              {type}
+        <div className="notion-property-value">
+          <select
+            id="document_type"
+            name="document_type"
+            required
+            defaultValue={template?.document_type ?? ""}
+          >
+            <option value="" disabled>
+              Выберите тип
             </option>
-          ))}
-        </select>
+            {types.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <TemplateActionsField defaultValue={actionTitlesValue} />
 
-      <div className="form-actions">
+      <div className="page-form-footer">
         <button type="submit" className="primary-button">
           {template ? "Сохранить" : "Создать"}
         </button>

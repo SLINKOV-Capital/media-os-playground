@@ -30,17 +30,19 @@ export default async function NewTemplatePage() {
 
   return (
     <AppShell>
-      <div className="content-page content-page-narrow">
+      <div className="content-page content-page-narrow template-page">
         <Link href="/templates" className="breadcrumb-link">
           ← Шаблоны
         </Link>
-        <header className="content-header content-header-stack">
-          <h1 className="content-title">Новый шаблон</h1>
-          <p className="content-subtitle">
-            Один шаблон на тип документа
-          </p>
-        </header>
-        <WorkflowTemplateForm documentTypes={documentTypes} />
+
+        <div className="doc-page-stack">
+          <header className="doc-page-header">
+            <h1 className="doc-page-title">Новый шаблон</h1>
+            <p className="doc-page-type">тип страницы документа</p>
+          </header>
+
+          <WorkflowTemplateForm documentTypes={documentTypes} />
+        </div>
       </div>
     </AppShell>
   );
