@@ -13,8 +13,8 @@ export function AppShell({ children }: AppShellProps) {
       <div className="app-shell-body">
         <MobileTopBar />
         <main className="app-main">{children}</main>
-        <MobileBottomNav />
       </div>
+      <MobileBottomNav />
     </div>
   );
 }

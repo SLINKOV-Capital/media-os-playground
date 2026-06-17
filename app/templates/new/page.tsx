@@ -1,5 +1,6 @@
 import { WorkflowTemplateForm } from "@/components/WorkflowTemplateForm";
 import { AppShell } from "@/components/AppShell";
+import { mergeDocumentTypes } from "@/lib/document-types";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -14,6 +15,19 @@ export default async function NewTemplatePage() {
     redirect("/login");
   }
 
+  const [{ data: documentsData }, { data: templatesData }] = await Promise.all([
+    supabase.from("documents").select("document_type").eq("user_id", user.id),
+    supabase
+      .from("workflow_templates_v2")
+      .select("document_type")
+      .eq("user_id", user.id),
+  ]);
+
+  const documentTypes = mergeDocumentTypes(
+    (documentsData ?? []).map((row) => row.document_type),
+    (templatesData ?? []).map((row) => row.document_type)
+  );
+
   return (
     <AppShell>
       <div className="content-page content-page-narrow">
@@ -26,7 +40,7 @@ export default async function NewTemplatePage() {
             Один шаблон на тип документа
           </p>
         </header>
-        <WorkflowTemplateForm />
+        <WorkflowTemplateForm documentTypes={documentTypes} />
       </div>
     </AppShell>
   );

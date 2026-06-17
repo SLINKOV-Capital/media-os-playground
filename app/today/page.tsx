@@ -2,6 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { SortableTodayList } from "@/components/SortableTodayList";
 import type { FocusAction } from "@/components/TodayItem";
 import { createClient } from "@/lib/supabase/server";
+import { formatTodayHeading } from "@/lib/format";
 import { redirect } from "next/navigation";
 
 export default async function TodayPage() {
@@ -26,10 +27,17 @@ export default async function TodayPage() {
   }
 
   const focusActions = (data ?? []) as FocusAction[];
+  const todayHeading = formatTodayHeading();
 
   return (
     <AppShell>
-      <div className="content-page">
+      <div className="content-page today-page">
+        <div className="today-date-bar">
+          <time dateTime={new Date().toISOString().slice(0, 10)}>
+            {todayHeading}
+          </time>
+        </div>
+
         <header className="content-header content-header-stack">
           <h1 className="content-title">Сегодня</h1>
           <p className="content-subtitle">

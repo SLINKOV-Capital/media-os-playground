@@ -1,5 +1,6 @@
 import { WorkflowTemplateForm } from "@/components/WorkflowTemplateForm";
 import { AppShell } from "@/components/AppShell";
+import { mergeDocumentTypes } from "@/lib/document-types";
 import { createClient } from "@/lib/supabase/server";
 import type { WorkflowTemplateV2 } from "@/lib/types";
 import Link from "next/link";
@@ -20,11 +21,15 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
     redirect("/login");
   }
 
-  const { data, error } = await supabase
-    .from("workflow_templates_v2")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data, error }, { data: documentsData }, { data: templatesData }] =
+    await Promise.all([
+      supabase.from("workflow_templates_v2").select("*").eq("id", id).maybeSingle(),
+      supabase.from("documents").select("document_type").eq("user_id", user.id),
+      supabase
+        .from("workflow_templates_v2")
+        .select("document_type")
+        .eq("user_id", user.id),
+    ]);
 
   if (error) {
     console.error("Failed to fetch workflow template:", error.message);
@@ -36,6 +41,10 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
   }
 
   const template = data as WorkflowTemplateV2;
+  const documentTypes = mergeDocumentTypes(
+    (documentsData ?? []).map((row) => row.document_type),
+    (templatesData ?? []).map((row) => row.document_type)
+  );
 
   return (
     <AppShell>
@@ -47,7 +56,10 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
           <h1 className="content-title">Редактировать шаблон</h1>
           <p className="content-subtitle">{template.document_type}</p>
         </header>
-        <WorkflowTemplateForm template={template} />
+        <WorkflowTemplateForm
+          template={template}
+          documentTypes={documentTypes}
+        />
       </div>
     </AppShell>
   );
