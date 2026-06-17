@@ -27,22 +27,18 @@ export default async function TodayPage() {
   }
 
   const focusActions = (data ?? []) as FocusAction[];
-  const todayHeading = formatTodayHeading();
+  const today = new Date();
+  const todayHeading = formatTodayHeading(today);
+  const todayIso = today.toISOString().slice(0, 10);
 
   return (
     <AppShell>
       <div className="content-page today-page">
-        <div className="today-date-bar">
-          <time dateTime={new Date().toISOString().slice(0, 10)}>
-            {todayHeading}
-          </time>
-        </div>
-
         <header className="content-header content-header-stack">
           <h1 className="content-title">Сегодня</h1>
-          <p className="content-subtitle">
-            Действия в фокусе из разных документов
-          </p>
+          <time className="page-dateline" dateTime={todayIso}>
+            {todayHeading}
+          </time>
         </header>
 
         {focusActions.length === 0 ? (

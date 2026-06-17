@@ -86,47 +86,41 @@ export default async function DocumentPage({
         </Link>
 
         <div className="doc-page-stack">
-          <section className="doc-page-panel doc-page-panel-header">
-            <header className="doc-page-header">
-              <h1 className="doc-page-title">{document.title}</h1>
-              <p className="doc-page-type">{document.document_type}</p>
-            </header>
+          <header className="doc-page-header">
+            <h1 className="doc-page-title">{document.title}</h1>
+            <p className="doc-page-type">{document.document_type}</p>
+          </header>
 
-            {actions.length === 0 && template && (
-              <div className="workflow-callout">
-                <p className="workflow-callout-title">
-                  Найден шаблон для этого типа документа
-                </p>
-                <ul className="workflow-callout-list">
-                  {template.action_titles.map((title) => (
-                    <li key={title}>{title}</li>
-                  ))}
-                </ul>
-                <form action={generateActions}>
-                  <input type="hidden" name="document_id" value={document.id} />
-                  <button type="submit" className="ghost-button">
-                    Сгенерировать действия
-                  </button>
-                </form>
-              </div>
-            )}
-          </section>
+          {actions.length === 0 && template && (
+            <div className="workflow-callout">
+              <p className="workflow-callout-title">
+                Найден шаблон для этого типа документа
+              </p>
+              <ul className="workflow-callout-list">
+                {template.action_titles.map((title) => (
+                  <li key={title}>{title}</li>
+                ))}
+              </ul>
+              <form action={generateActions}>
+                <input type="hidden" name="document_id" value={document.id} />
+                <button type="submit" className="ghost-button">
+                  Сгенерировать действия
+                </button>
+              </form>
+            </div>
+          )}
 
-          <section className="doc-page-panel">
-            <DocumentActionsBlock
-              documentId={document.id}
-              actions={actions}
-              materials={materials}
-              activeOnly={activeOnly}
-            />
-          </section>
+          <DocumentActionsBlock
+            documentId={document.id}
+            actions={actions}
+            materials={materials}
+            activeOnly={activeOnly}
+          />
 
-          <section className="doc-page-panel">
-            <DocumentMaterialsBlock
-              documentId={document.id}
-              materials={materials}
-            />
-          </section>
+          <DocumentMaterialsBlock
+            documentId={document.id}
+            materials={materials}
+          />
         </div>
       </div>
     </AppShell>
