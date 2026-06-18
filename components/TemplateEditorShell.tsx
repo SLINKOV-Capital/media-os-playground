@@ -5,7 +5,7 @@ import {
   updateTemplateTitle,
   updateWorkflowTemplate,
 } from "@/app/templates/actions";
-import { InlineEditableTitle } from "@/components/InlineEditableTitle";
+import { PageTitle } from "@/components/PageTitle";
 import type { WorkflowTemplateV2 } from "@/lib/types";
 import Link from "next/link";
 import { useState } from "react";
@@ -34,8 +34,8 @@ export function TemplateEditorShell({ template }: TemplateEditorShellProps) {
 
   return (
     <div className="doc-page-stack">
-      <header className="doc-page-header">
-        <InlineEditableTitle
+      <header className="page-header">
+        <PageTitle
           value={template?.document_type ?? ""}
           onSave={handleSaveTitle}
           onDraftChange={setTitle}

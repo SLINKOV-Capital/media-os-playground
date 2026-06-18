@@ -1,6 +1,7 @@
 import { createMaterial } from "@/app/documents/actions";
 import { AppShell } from "@/components/AppShell";
 import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
+import { PageTitle } from "@/components/PageTitle";
 import { createClient } from "@/lib/supabase/server";
 import type { Document } from "@/lib/types";
 import Link from "next/link";
@@ -36,8 +37,8 @@ export default async function NewMaterialPage() {
         </Link>
 
         <div className="doc-page-stack">
-          <header className="doc-page-header">
-            <h1 className="doc-page-title">Новый материал</h1>
+          <header className="page-header">
+            <PageTitle value="Новый материал" />
           </header>
 
           {documents.length === 0 ? (

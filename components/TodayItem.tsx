@@ -4,6 +4,7 @@ import { toggleActionDone, toggleActionToday } from "@/app/documents/actions";
 import type { Action, Document } from "@/lib/types";
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
+import { useClientDragHandleProps } from "@/lib/useClientDragHandleProps";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
@@ -166,6 +167,15 @@ export function SortableTodayItem({
         transition,
       };
 
+  const dragHandleProps = useClientDragHandleProps(
+    isDragOverlay
+      ? undefined
+      : {
+          attributes,
+          listeners,
+        }
+  );
+
   return (
     <TodayItem
       action={action}
@@ -174,14 +184,7 @@ export function SortableTodayItem({
       isDragging={isDragging}
       setNodeRef={isDragOverlay ? undefined : setNodeRef}
       style={style}
-      dragHandleProps={
-        isDragOverlay
-          ? undefined
-          : {
-              attributes,
-              listeners,
-            }
-      }
+      dragHandleProps={dragHandleProps}
     />
   );
 }

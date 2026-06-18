@@ -13,9 +13,28 @@
 ## Next.js App Router
 
 - Страницы в `app/` — Server Components по умолчанию.
-- Client Components только там, где нужна интерактивность (checklist, typeahead, inline edit).
+- Client Components только там, где нужна интерактивность (checklist, typeahead, inline edit, drag-and-drop).
 - `middleware.ts` — refresh сессии Supabase, защита маршрутов.
 - Server Actions: `app/documents/actions.ts`, `app/templates/actions.ts`, `app/materials/actions.ts` (план), `app/nihuyasi/actions.ts` (план).
+
+## Page Title — единый контракт
+
+Заголовки карточек сущностей верхнего уровня (Document, Material, Template) — один UI-контракт:
+
+| Слой | Артефакт |
+|------|----------|
+| Компонент | `components/PageTitle.tsx` |
+| Стили | tokens в `app/globals.css`: `--page-title-size`, `--page-title-weight`, `--page-title-line-height`, `--page-title-letter-spacing` |
+| CSS-классы | `.page-title`, `.page-title-field`, `.page-title-static` — без per-entity классов |
+
+Подробные правила, anti-patterns и чеклист регрессии — `docs/design-principles.md` → «Page Title — единый контракт».
+
+## Drag-and-drop (dnd-kit)
+
+- Списки с reorder: `SortableActionsList` (document actions), `SortableTodayList` (today).
+- `useSortable` возвращает `attributes` с `aria-describedby` (IDs вида `DndDescribedBy-N`).
+- **Hydration:** эти атрибуты нельзя применять на SSR — счётчик ID расходится между server и client. Решение: `lib/useClientDragHandleProps.ts` — drag handle props только после mount.
+- У каждого `DndContext` — стабильный `id` (`document-actions-dnd`, `today-actions-dnd`).
 
 ## Supabase
 

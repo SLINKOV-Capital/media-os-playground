@@ -15,6 +15,11 @@
   --mobile-top-height: 48px;
   --mobile-nav-height: 56px;
   --layout-compact-max: 1024px;
+  --page-title-size: 2.5rem;
+  --page-title-size-mobile: 1.75rem;
+  --page-title-weight: 700;
+  --page-title-line-height: 1.15;
+  --page-title-letter-spacing: -0.03em;
 }
 
 * {
@@ -888,11 +893,11 @@ a {
   padding: 2rem 1.5rem 4rem;
 }
 
-.page-header {
+.page .page-header {
   margin-bottom: 2.5rem;
 }
 
-.page-header h1 {
+.page .page-header h1 {
   font-size: 1.5rem;
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -1348,19 +1353,17 @@ a {
     display: none;
   }
 
-  .doc-page-title {
-    font-size: 1.75rem;
+  .page-title,
+  textarea.page-title-field,
+  h1.page-title-static {
+    font-size: var(--page-title-size-mobile);
     overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
-  .doc-page-header {
+  .page-header {
     margin: 0;
     padding-bottom: 0;
-  }
-
-  .material-page-title {
-    font-size: 1.5rem;
-    overflow-wrap: anywhere;
   }
 
   .collection-header {
@@ -1525,16 +1528,84 @@ a {
   gap: 28px;
 }
 
-.doc-page-header {
+.page-header {
   margin: 0;
+  width: 100%;
 }
 
-.doc-page-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.03em;
+/* Entity page title — document, material, template. One component: PageTitle. */
+.page-title,
+textarea.page-title-field,
+h1.page-title-static {
+  margin: 0;
+  font-family: var(--font);
+  font-size: var(--page-title-size);
+  font-weight: var(--page-title-weight);
+  line-height: var(--page-title-line-height);
+  letter-spacing: var(--page-title-letter-spacing);
   color: var(--text);
+}
+
+.page-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.page-title-block-with-leading {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.page-title-wrap {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.page-title-leading {
+  flex-shrink: 0;
+  margin-top: 0.35em;
+}
+
+.page-title-field {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+  field-sizing: content;
+}
+
+.page-title-field:focus {
+  outline: none;
+}
+
+.page-title-field:disabled {
+  opacity: 0.72;
+}
+
+.page-title-static {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.page-title-error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #c0392b;
 }
 
 .doc-page-type {
@@ -2181,53 +2252,6 @@ a {
   gap: 8px;
 }
 
-.material-page-title-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.material-page-title-row .inline-editable-title {
-  flex: 1;
-  min-width: 0;
-}
-
-.inline-editable-title {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.inline-editable-title-input {
-  display: block;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
-}
-
-.inline-editable-title-input:focus {
-  outline: none;
-}
-
-.inline-editable-title-input:disabled {
-  opacity: 0.72;
-}
-
-.inline-editable-title-error {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.4;
-  color: #c0392b;
-}
-
 .material-properties-editor {
   display: flex;
   flex-direction: column;
@@ -2447,18 +2471,6 @@ a {
 
 .material-page {
   max-width: 720px;
-}
-
-.material-page-header {
-  margin: 8px 0 32px;
-}
-
-.material-page-title {
-  font-size: 2rem;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  color: var(--text);
 }
 
 .material-page-type {

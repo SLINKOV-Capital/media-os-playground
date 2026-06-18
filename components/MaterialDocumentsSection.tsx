@@ -243,7 +243,7 @@ export function MaterialDocumentsSection({
         </div>
       )}
 
-      {error && <p className="inline-editable-title-error">{error}</p>}
+      {error && <p className="page-title-error">{error}</p>}
     </section>
   );
 }

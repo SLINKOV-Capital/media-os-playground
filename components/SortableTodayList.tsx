@@ -97,6 +97,7 @@ export function SortableTodayList({ actions }: SortableTodayListProps) {
 
   return (
     <DndContext
+      id="today-actions-dnd"
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}

@@ -2,7 +2,7 @@ import {
   updateMaterialTitle,
 } from "@/app/documents/actions";
 import { AppShell } from "@/components/AppShell";
-import { InlineEditableTitle } from "@/components/InlineEditableTitle";
+import { PageTitle } from "@/components/PageTitle";
 import { MaterialDocumentsSection } from "@/components/MaterialDocumentsSection";
 import { MaterialPropertiesEditor } from "@/components/MaterialPropertiesEditor";
 import { createClient } from "@/lib/supabase/server";
@@ -143,65 +143,66 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
           ← Материалы
         </Link>
 
-        <header className="material-page-header">
-          <div className="material-page-title-row">
-            <span
-              className="material-type-icon material-type-icon-large"
-              aria-hidden="true"
-            >
-              {getMaterialTypeIcon(material.material_type)}
-            </span>
-            <InlineEditableTitle
+        <div className="doc-page-stack">
+          <header className="page-header">
+            <PageTitle
               value={material.title}
               onSave={saveMaterialTitle}
-              inputClassName="material-page-title"
-            />
-          </div>
-        </header>
-
-        <MaterialPropertiesEditor
-          key={`${material.material_type}|${material.file_url_or_path ?? ""}|${material.notes ?? ""}`}
-          material={material}
-        />
-
-        <MaterialDocumentsSection
-          materialId={material.id}
-          linkedDocuments={linkedDocuments}
-          availableDocuments={availableDocuments}
-        />
-
-        <section className="doc-section">
-          <div className="section-header">
-            <h2 className="section-label">Связанные действия</h2>
-          </div>
-
-          {linkedActions.length === 0 ? (
-            <p className="section-empty">
-              Нет действий, привязанных к этому материалу
-            </p>
-          ) : (
-            <ul className="material-actions-list">
-              {linkedActions.map((action) => (
-                <li
-                  key={action.id}
-                  className={`material-action-item${
-                    action.done ? " is-done" : ""
-                  }`}
+              leading={
+                <span
+                  className="material-type-icon material-type-icon-large page-title-leading"
+                  aria-hidden="true"
                 >
-                  <Link
-                    href={`/documents/${action.document_id}`}
-                    className="material-action-link"
+                  {getMaterialTypeIcon(material.material_type)}
+                </span>
+              }
+            />
+          </header>
+
+          <MaterialPropertiesEditor
+            key={`${material.material_type}|${material.file_url_or_path ?? ""}|${material.notes ?? ""}`}
+            material={material}
+          />
+
+          <MaterialDocumentsSection
+            materialId={material.id}
+            linkedDocuments={linkedDocuments}
+            availableDocuments={availableDocuments}
+          />
+
+          <section className="doc-section">
+            <div className="section-header">
+              <h2 className="section-label">Связанные действия</h2>
+            </div>
+
+            {linkedActions.length === 0 ? (
+              <p className="section-empty">
+                Нет действий, привязанных к этому материалу
+              </p>
+            ) : (
+              <ul className="material-actions-list">
+                {linkedActions.map((action) => (
+                  <li
+                    key={action.id}
+                    className={`material-action-item${
+                      action.done ? " is-done" : ""
+                    }`}
                   >
-                    <span className="material-action-title">{action.title}</span>
-                    <span className="material-action-document">
-                      Документ: {action.documentTitle}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+                    <Link
+                      href={`/documents/${action.document_id}`}
+                      className="material-action-link"
+                    >
+                      <span className="material-action-title">{action.title}</span>
+                      <span className="material-action-document">
+                        Документ: {action.documentTitle}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       </div>
     </AppShell>
   );

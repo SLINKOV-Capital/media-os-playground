@@ -1,7 +1,7 @@
 import { generateActions, updateDocumentTitle } from "@/app/documents/actions";
 import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
-import { InlineEditableTitle } from "@/components/InlineEditableTitle";
+import { PageTitle } from "@/components/PageTitle";
 import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
 import { mapActionsMaterials } from "@/lib/mapActionMaterials";
@@ -98,11 +98,8 @@ export default async function DocumentPage({
         </Link>
 
         <div className="doc-page-stack">
-          <header className="doc-page-header">
-            <InlineEditableTitle
-              value={document.title}
-              onSave={saveDocumentTitle}
-            />
+          <header className="page-header">
+            <PageTitle value={document.title} onSave={saveDocumentTitle} />
             <p className="doc-page-type">{document.document_type}</p>
           </header>
 

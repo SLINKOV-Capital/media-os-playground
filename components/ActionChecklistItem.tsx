@@ -11,6 +11,7 @@ import {
 import type { Action, Material } from "@/lib/types";
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
+import { useClientDragHandleProps } from "@/lib/useClientDragHandleProps";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
@@ -452,6 +453,15 @@ export function SortableActionChecklistItem({
         transition,
       };
 
+  const dragHandleProps = useClientDragHandleProps(
+    isDragOverlay
+      ? undefined
+      : {
+          attributes,
+          listeners,
+        }
+  );
+
   return (
     <ActionChecklistItem
       action={action}
@@ -462,14 +472,7 @@ export function SortableActionChecklistItem({
       isDragging={isDragging}
       setNodeRef={isDragOverlay ? undefined : setNodeRef}
       style={style}
-      dragHandleProps={
-        isDragOverlay
-          ? undefined
-          : {
-              attributes,
-              listeners,
-            }
-      }
+      dragHandleProps={dragHandleProps}
     />
   );
 }

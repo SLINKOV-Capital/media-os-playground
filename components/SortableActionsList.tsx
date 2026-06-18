@@ -104,6 +104,7 @@ export function SortableActionsList({
 
   return (
     <DndContext
+      id="document-actions-dnd"
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
