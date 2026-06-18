@@ -1,7 +1,7 @@
 "use client";
 
 import { toggleActionDone, toggleActionToday } from "@/app/documents/actions";
-import type { Action, Document, Material } from "@/lib/types";
+import type { Action, Document } from "@/lib/types";
 import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import { useSortable } from "@dnd-kit/sortable";
@@ -11,7 +11,6 @@ import type { CSSProperties } from "react";
 
 export type FocusAction = Action & {
   documents: Pick<Document, "id" | "title">;
-  materials?: Pick<Material, "id" | "title"> | null;
 };
 
 type TodayItemProps = {
@@ -56,7 +55,9 @@ export function TodayItem({
   dragHandleProps,
 }: TodayItemProps) {
   const document = action.documents;
-  const material = action.materials;
+  const materials = action.materials ?? [];
+  const firstMaterial = materials[0];
+  const extraMaterialCount = materials.length - 1;
 
   const itemClassName = [
     "today-item",
@@ -103,17 +104,22 @@ export function TodayItem({
             <Link href={`/documents/${document.id}`} className="today-doc-link">
               {document.title}
             </Link>
-            {material && (
+            {firstMaterial && (
               <>
                 <span className="today-context-sep" aria-hidden="true">
                   ·
                 </span>
                 <Link
-                  href={`/materials/${material.id}`}
+                  href={`/materials/${firstMaterial.id}`}
                   className="today-material-tag"
                 >
-                  {material.title}
+                  {firstMaterial.title}
                 </Link>
+                {extraMaterialCount > 0 && (
+                  <span className="today-material-count">
+                    +{extraMaterialCount}
+                  </span>
+                )}
               </>
             )}
           </p>

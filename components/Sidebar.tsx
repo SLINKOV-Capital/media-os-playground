@@ -7,6 +7,7 @@ const navItems = [
   { href: "/today", label: "Сегодня" },
   { href: "/documents", label: "Документы" },
   { href: "/templates", label: "Шаблоны" },
+  { href: "/materials", label: "Материалы" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -16,6 +17,10 @@ function isActive(pathname: string, href: string) {
 
   if (href === "/templates") {
     return pathname === "/templates" || pathname.startsWith("/templates/");
+  }
+
+  if (href === "/materials") {
+    return pathname === "/materials" || pathname.startsWith("/materials/");
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);

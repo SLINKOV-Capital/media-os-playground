@@ -2,37 +2,77 @@
 
 Зафиксированные идеи развития. Не является обязательством к реализации.
 
-## Ближайшие
+## v0.3 — архитектурный пакет (ближайший спринт)
 
-- [ ] **Вывести Media OS в онлайн.**
-- [ ] **Сделать мобильную версию Cockpit.**
-- [ ] **Поработать в Media OS на реальных задачах и потюнить UX.**
-- [ ] **Довести один документ до публикации**, используя только Media OS как систему управления работой.
-- [ ] **Сделать публичные страницы сайта:**
-  - [ ] блог;
-  - [ ] страница статьи.
-- [ ] **Опубликовать первый пост** на временном домене и разослать ссылку близким для обратной связи.
+### Global Materials
+
+- [ ] Миграция `008_global_materials.sql` — `document_materials`, global materials, unique titles
+- [ ] `/materials` — таблица, search, filter by type, type icons
+- [ ] `/materials/new` — создание с обязательным document
+- [ ] `/materials/[id]` — documents list + actions list
+- [ ] Document card — «Добавить материал», typeahead, dedup by title, link existing
+- [ ] Action checklist — materials только из document scope
+- [ ] `app/materials/actions.ts` — CRUD, link/unlink, search
+- [ ] Desktop sidebar — пункт «Материалы»
+- [ ] Mobile hamburger — Materials
+
+Подробнее: `docs/materials-architecture.md`.
+
+### Nihuyasi
+
+- [ ] Миграция `009_nihuyasi.sql`
+- [ ] `/nihuyasi` — feed + inline add/edit
+- [ ] Desktop sidebar — пункт «Нихуяси»
+- [ ] Mobile hamburger — Nihuyasi
+- [ ] `app/nihuyasi/actions.ts`
+
+Подробнее: `docs/nihuyasi.md`.
+
+### Bugfixes
+
+- [ ] Inline edit **document title** на `/documents/[id]`
+- [ ] Inline edit **template name** (`document_type`) на `/templates/[id]/edit`
+
+### Uniqueness
+
+- [ ] `materials.title` unique per `user_id`
+- [ ] `documents.title` unique per `user_id`
+
+## Ближайшие (после v0.3)
+
+- [ ] **Вывести Media OS в онлайн** (см. `docs/deployment.md`)
+- [ ] **Поработать на реальных задачах** и потюнить UX
+- [ ] **Довести один документ до публикации**
+- [ ] **Публичные страницы:** блог, статья (soloten.com)
+- [ ] **Опубликовать первый пост** на временном домене
 
 ## Отложенные
 
-- **Перегенерация actions** из шаблона (с подтверждением, если actions уже есть).
-- **Редактирование / удаление materials.**
-- **`/templates/[id]/edit`** → AppShell + единый стиль с остальным Cockpit.
-- **Inline-редактирование** title и document_type на странице документа.
-- **Подтверждение удаления** action (минимальный dialog или double-click).
-- **Поиск** по документам и действиям.
-- **Фильтры** на `/documents` (по типу).
-- **Breadcrumbs** и навигация «последние документы» в sidebar.
-- **Очистка legacy-кода:** Nav, типы Task/Project, неиспользуемые экраны v0.1.
-- **Удаление legacy-таблиц** (`tasks`, `projects`, `workflow_templates` v0.1) после финальной миграции данных.
+- Перегенерация actions из шаблона
+- Удаление global material
+- Unlink material from document (UI)
+- Поиск по documents и actions
+- Фильтры на `/documents` (по типу)
+- Breadcrumbs / recent documents в sidebar
+- Очистка legacy-кода и таблиц v0.1
+- `/templates/[id]/edit` — property rows унификация
 
 ## Когда-нибудь
 
-- **Dark mode.**
-- **Slash-команды** на странице документа.
-- **Supabase Storage** для файлов materials.
-- **AI-функции** (генерация действий, черновиков).
-- **Дедлайны и календарь.**
-- **Версионирование документов.**
-- **Экспорт** документа (Markdown, PDF).
-- **Несколько пользователей** / shared documents.
+- Dark mode
+- Slash-команды
+- Supabase Storage для files
+- AI-функции
+- Дедлайны и календарь
+- Версионирование документов
+- Экспорт (Markdown, PDF)
+- Несколько пользователей / shared documents
+
+## Выполнено (архив)
+
+- v0.2 — documents, actions, materials, templates, Today
+- v0.2.1 — `action_materials` many-to-many
+- Action accordion UX на странице документа
+- Drag-and-drop reorder (document + Today)
+- AppShell + mobile bottom nav
+- Deploy docs (`docs/deployment.md`)

@@ -220,7 +220,9 @@ Notion · Craft · Capacities · Reflect
 
 - «Выйти» — muted, внизу sidebar.
 
-- Пункт **Materials** в навигацию не добавляем.
+- Пункт **Materials** в desktop sidebar — **добавляется в v0.3** (`/materials`).
+- Пункт **Нихуяси** в desktop sidebar — **v0.3** (`/nihuyasi`).
+- На mobile: Materials и Nihuyasi — только через **hamburger menu**; bottom nav не меняется.
 
 
 
@@ -272,33 +274,113 @@ Notion · Craft · Capacities · Reflect
 
 
 
-## Материалы — вторичные объекты
+## Материалы — global objects (v0.3)
 
 
 
-- На странице документа — карточки на мягком фоне, без тяжёлых рамок.
+Materials — **глобальные объекты пользователя**, не «дети» одного документа. Связь с documents — через `document_materials`; с actions — через `action_materials`.
 
-- Форма добавления — Notion property rows (label + input в одном блоке).
 
-- Одна кнопка «Добавить материал» (ghost), не primary на каждое поле.
 
-- **Теги и ссылки:** в чеклисте и на Today материал — pill-тег; клик ведёт на `/materials/[id]`, не на внешний файл и не просто на документ.
+Подробнее: `docs/materials-architecture.md`.
 
-- **Страница `/materials/[id]`** — отдельная «страница» материала:
 
-  - title — заголовок;
 
-  - material_type — pill;
+### Список `/materials`
 
-  - file_url_or_path — внешняя кликабельная ссылка (если заполнен);
 
-  - notes — текст;
 
-  - ссылка на документ-родитель;
+- Collection-list (Notion-database): type **icon** слева, **title** primary, **material_type** secondary.
+- Поиск по title (inline, без modal).
+- Фильтр по `material_type` — pills или select, hardcoded types.
+- Кнопка «+ Новый материал» — `.notion-new-button`.
+- Без CRM-таблицы и boxed-карточек.
 
-  - список связанных actions.
 
-- Материалы воспринимаются как **теги и ссылки**, не как файловый менеджер.
+
+### Создание material
+
+
+
+- Из `/materials/new` — **обязательный** выбор document (property row или combobox).
+- Из `/documents/[id]` — document подставлен; panel «Добавить материал»:
+  - typeahead по title (от 1 символа);
+  - создание нового или привязка существующего;
+  - dedup: один title на user — дубль не создавать.
+
+
+
+### Карточка `/materials/[id]`
+
+
+
+- Title — крупный заголовок страницы, inline edit.
+- Properties: type pill, URL, notes.
+- Секция **Документы** — flat list ссылок (не «родитель», а все documents).
+- Секция **Действия** — flat list linked actions.
+- Без файлового менеджера; URL — accent link.
+
+
+
+### На странице документа
+
+
+
+- Секция «Материалы» — materials, привязанные к document через `document_materials`.
+- Кнопка **«Добавить материал»** → search + create/link panel.
+- В action checklist доступны только materials **этого document**.
+
+
+
+### Type icons
+
+
+
+Hardcoded map в `lib/materialTypes.ts` — emoji или SVG слева от title в списках.
+
+
+
+## Nihuyasi (v0.3)
+
+
+
+- Отдельный feed, не смешивать с documents.
+- Хронологический список: дата secondary, текст primary.
+- Inline add / edit, auto-save.
+- Подробнее: `docs/nihuyasi.md`.
+
+
+
+## Mobile navigation (v0.3)
+
+
+
+- **Bottom nav** — без изменений: Сегодня · Документы · Шаблоны.
+- **Hamburger** (правый верхний угол или sidebar drawer): Материалы · Нихуяси · Выйти.
+- Hamburger не дублирует пункты bottom nav.
+
+
+
+## Inline edit — bugfixes (v0.3)
+
+
+
+- **Document title** на `/documents/[id]` — borderless input / contenteditable pattern, auto-save on blur (как action title).
+- **Template name** (`document_type`) на `/templates/[id]/edit` — тот же паттерн; сейчас заголовок статичный — исправить.
+
+
+
+## Материалы — вторичные объекты (v0.2, частично заменено v0.3)
+
+
+
+> Секция выше «Материалы — global objects» заменяет модель v0.2. Ниже — историческая справка до миграции.
+
+
+
+- На странице документа — список materials document-scoped (до v0.3).
+- **Теги и ссылки:** material pill → `/materials/[id]`.
+- Accordion в action row для many-to-many (action_materials).
 
 
 
@@ -384,7 +466,9 @@ Notion · Craft · Capacities · Reflect
 
 | `/today` | AppShell + focus checklist + reorder + dateline в заголовке |
 
-| `/materials/[id]` | AppShell + property page |
+| `/materials` | AppShell + global collection-list | **план v0.3** |
+| `/materials/[id]` | AppShell + property page + documents + actions | **расширить v0.3** |
+| `/nihuyasi` | AppShell + feed | **план v0.3** |
 
 | `/templates/[id]/edit` | AppShell + property page (миграция в процессе) |
 

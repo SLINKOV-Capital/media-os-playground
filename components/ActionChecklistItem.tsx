@@ -2,8 +2,10 @@
 
 import {
   deleteAction,
+  linkActionMaterial,
   toggleActionDone,
   toggleActionToday,
+  unlinkActionMaterial,
   updateAction,
 } from "@/app/documents/actions";
 import type { Action, Material } from "@/lib/types";
@@ -11,9 +13,17 @@ import type { DraggableAttributes } from "@dnd-kit/core";
 import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useRef, useTransition, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
+import {
+  useRef,
+  useState,
+  useTransition,
+  type MouseEvent,
+  type CSSProperties,
+} from "react";
+
+type LinkedMaterial = Pick<Material, "id" | "title">;
 
 type ActionChecklistItemProps = {
   action: Action;
@@ -29,6 +39,9 @@ type ActionChecklistItemProps = {
   };
   isDragging?: boolean;
 };
+
+const INTERACTIVE_SELECTOR =
+  "button, input, a, .checklist-drag-handle, .checklist-checkbox, .checklist-title, .focus-pill, .destructive-link, .material-pill, .checklist-unlink-material, .checklist-link-material";
 
 function GripIcon() {
   return (
@@ -49,6 +62,49 @@ function GripIcon() {
   );
 }
 
+function ChevronIcon({ expanded }: { expanded: boolean }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+      className={`checklist-chevron${expanded ? " is-expanded" : ""}`}
+    >
+      <path
+        d="M3 4.5L6 7.5L9 4.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function stopRowToggle(event: { stopPropagation: () => void }) {
+  event.stopPropagation();
+}
+
+function getCollapsedMaterialsSummary(linkedMaterials: LinkedMaterial[]) {
+  const count = linkedMaterials.length;
+
+  if (count === 0) {
+    return { kind: "empty" as const };
+  }
+
+  if (count === 1) {
+    return { kind: "names" as const, materials: linkedMaterials };
+  }
+
+  if (count <= 3) {
+    return { kind: "names" as const, materials: linkedMaterials };
+  }
+
+  return { kind: "count" as const, count };
+}
+
 export function ActionChecklistItem({
   action,
   documentId,
@@ -62,8 +118,17 @@ export function ActionChecklistItem({
 }: ActionChecklistItemProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isExpanded, setIsExpanded] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const lastSavedTitle = useRef(action.title);
+
+  const linkedMaterials = action.materials ?? [];
+  const linkedMaterialIds = new Set(linkedMaterials.map((material) => material.id));
+  const availableMaterials = materials.filter(
+    (material) => !linkedMaterialIds.has(material.id)
+  );
+  const collapsedSummary = getCollapsedMaterialsSummary(linkedMaterials);
+  const hasDocumentMaterials = materials.length > 0;
 
   function refresh() {
     startTransition(() => {
@@ -86,7 +151,6 @@ export function ActionChecklistItem({
     formData.set("id", action.id);
     formData.set("document_id", documentId);
     formData.set("title", title);
-    formData.set("material_id", action.material_id ?? "");
 
     await updateAction(formData);
     lastSavedTitle.current = title;
@@ -111,14 +175,23 @@ export function ActionChecklistItem({
     refresh();
   }
 
-  async function handleMaterialSelect(materialId: string) {
+  async function handleLinkMaterial(materialId: string) {
     const formData = new FormData();
-    formData.set("id", action.id);
-    formData.set("document_id", documentId);
-    formData.set("title", titleRef.current?.value.trim() || action.title);
+    formData.set("action_id", action.id);
     formData.set("material_id", materialId);
+    formData.set("document_id", documentId);
 
-    await updateAction(formData);
+    await linkActionMaterial(formData);
+    refresh();
+  }
+
+  async function handleUnlinkMaterial(materialId: string) {
+    const formData = new FormData();
+    formData.set("action_id", action.id);
+    formData.set("material_id", materialId);
+    formData.set("document_id", documentId);
+
+    await unlinkActionMaterial(formData);
     refresh();
   }
 
@@ -130,18 +203,46 @@ export function ActionChecklistItem({
     refresh();
   }
 
+  function toggleExpanded() {
+    if (isDragOverlay) {
+      return;
+    }
+
+    setIsExpanded((value) => !value);
+  }
+
+  function handleRowClick(event: MouseEvent<HTMLElement>) {
+    if (isDragOverlay) {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+
+    if (target.closest(INTERACTIVE_SELECTOR)) {
+      return;
+    }
+
+    toggleExpanded();
+  }
+
   const itemClassName = [
     "checklist-item",
     action.done ? "is-done" : "",
     isPending ? "is-pending" : "",
     isDragging ? "is-dragging" : "",
     isDragOverlay ? "is-drag-overlay" : "",
+    isExpanded ? "is-expanded" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
   return (
-    <li ref={setNodeRef} style={style} className={itemClassName}>
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={itemClassName}
+      onClick={handleRowClick}
+    >
       {showDragHandle && (
         <button
           type="button"
@@ -158,18 +259,38 @@ export function ActionChecklistItem({
         type="button"
         className={`checklist-checkbox${action.done ? " is-checked" : ""}`}
         aria-label={action.done ? "Отметить неготовым" : "Отметить готовым"}
-        onClick={handleToggleDone}
+        onClick={(event) => {
+          stopRowToggle(event);
+          void handleToggleDone();
+        }}
       />
 
-      <div className="checklist-body">
+      <div className="checklist-body" aria-expanded={isExpanded}>
         <div className="checklist-main">
+          <button
+            type="button"
+            className="checklist-expand"
+            aria-label={isExpanded ? "Свернуть материалы" : "Развернуть материалы"}
+            aria-expanded={isExpanded}
+            onClick={(event) => {
+              stopRowToggle(event);
+              toggleExpanded();
+            }}
+          >
+            <ChevronIcon expanded={isExpanded} />
+          </button>
+
           <input
             ref={titleRef}
             type="text"
             defaultValue={action.title}
             className="checklist-title"
+            onClick={stopRowToggle}
+            onFocus={stopRowToggle}
             onBlur={saveFields}
             onKeyDown={(event) => {
+              stopRowToggle(event);
+
               if (event.key === "Enter") {
                 event.currentTarget.blur();
               }
@@ -179,7 +300,10 @@ export function ActionChecklistItem({
           <button
             type="button"
             className={`focus-pill${action.today ? " is-active" : ""}`}
-            onClick={handleToggleFocus}
+            onClick={(event) => {
+              stopRowToggle(event);
+              void handleToggleFocus();
+            }}
           >
             {action.today ? "В фокусе" : "В фокус"}
           </button>
@@ -187,49 +311,108 @@ export function ActionChecklistItem({
           <button
             type="button"
             className="destructive-link"
-            onClick={handleDelete}
+            onClick={(event) => {
+              stopRowToggle(event);
+              void handleDelete();
+            }}
           >
             Удалить
           </button>
         </div>
 
-        {materials.length > 0 && (
-          <div className="checklist-materials">
-            <button
-              type="button"
-              className={`material-pill${
-                !action.material_id ? " is-active" : ""
-              }`}
-              onClick={() => handleMaterialSelect("")}
-            >
-              Без материала
-            </button>
-            {materials.map((material) => {
-              const isActive = action.material_id === material.id;
+        {!isExpanded && (
+          <div className="checklist-materials-row">
+            <span className="checklist-materials-label">Материалы</span>
+            <div className="checklist-materials-summary">
+              {collapsedSummary.kind === "empty" && (
+                <span className="checklist-materials-add-hint">+ материал</span>
+              )}
 
-              if (isActive) {
-                return (
-                  <Link
-                    key={material.id}
-                    href={`/materials/${material.id}`}
-                    className="material-pill is-active"
-                  >
-                    {material.title}
-                  </Link>
-                );
-              }
+              {collapsedSummary.kind === "names" &&
+                collapsedSummary.materials.map((material, index) => (
+                  <span key={material.id} className="checklist-materials-name-group">
+                    {index > 0 && (
+                      <span className="checklist-materials-sep" aria-hidden="true">
+                        ,
+                      </span>
+                    )}
+                    <Link
+                      href={`/materials/${material.id}`}
+                      className="material-pill is-active"
+                      onClick={stopRowToggle}
+                    >
+                      {material.title}
+                    </Link>
+                  </span>
+                ))}
 
-              return (
-                <button
-                  key={material.id}
-                  type="button"
-                  className="material-pill"
-                  onClick={() => handleMaterialSelect(material.id)}
-                >
-                  {material.title}
-                </button>
-              );
-            })}
+              {collapsedSummary.kind === "count" && (
+                <span className="checklist-materials-count">
+                  {collapsedSummary.count} материалов
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
+        {isExpanded && (
+          <div className="checklist-materials-panel">
+            <p className="checklist-panel-heading">Связанные материалы</p>
+
+            {linkedMaterials.length > 0 ? (
+              <ul className="checklist-linked-materials">
+                {linkedMaterials.map((material) => (
+                  <li key={material.id} className="checklist-linked-material">
+                    <Link
+                      href={`/materials/${material.id}`}
+                      className="checklist-linked-material-title"
+                      onClick={stopRowToggle}
+                    >
+                      {material.title}
+                    </Link>
+                    <button
+                      type="button"
+                      className="checklist-unlink-material"
+                      onClick={(event) => {
+                        stopRowToggle(event);
+                        void handleUnlinkMaterial(material.id);
+                      }}
+                    >
+                      Убрать
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="checklist-materials-empty">
+                Нет связанных материалов
+              </p>
+            )}
+
+            {!hasDocumentMaterials ? (
+              <p className="checklist-materials-doc-empty">
+                В документе пока нет материалов. Добавьте материал ниже.
+              </p>
+            ) : availableMaterials.length > 0 ? (
+              <div className="checklist-attach-materials">
+                <p className="checklist-panel-heading">+ Привязать материал</p>
+                <div className="checklist-add-materials">
+                  {availableMaterials.map((material) => (
+                    <button
+                      key={material.id}
+                      type="button"
+                      className="material-pill checklist-link-material"
+                      onClick={(event) => {
+                        stopRowToggle(event);
+                        void handleLinkMaterial(material.id);
+                      }}
+                    >
+                      {material.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </div>

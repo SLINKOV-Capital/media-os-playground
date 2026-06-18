@@ -3,6 +3,8 @@ import { SortableTodayList } from "@/components/SortableTodayList";
 import type { FocusAction } from "@/components/TodayItem";
 import { createClient } from "@/lib/supabase/server";
 import { formatTodayHeading } from "@/lib/format";
+import { mapActionMaterials } from "@/lib/mapActionMaterials";
+import type { Document } from "@/lib/types";
 import { redirect } from "next/navigation";
 
 export default async function TodayPage() {
@@ -17,7 +19,9 @@ export default async function TodayPage() {
 
   const { data, error } = await supabase
     .from("actions")
-    .select("*, documents(id, title), materials(id, title)")
+    .select(
+      "*, documents(id, title), action_materials(material_id, materials(id, title))"
+    )
     .eq("today", true)
     .eq("user_id", user.id)
     .order("today_sort_order", { ascending: true });
@@ -26,7 +30,17 @@ export default async function TodayPage() {
     console.error("Failed to fetch focus actions:", error.message);
   }
 
-  const focusActions = (data ?? []) as FocusAction[];
+  const focusActions: FocusAction[] = (data ?? []).map((row) => {
+    const rowData = row as Parameters<typeof mapActionMaterials>[0] & {
+      documents: Pick<Document, "id" | "title">;
+    };
+    const { documents } = rowData;
+
+    return {
+      ...mapActionMaterials(rowData),
+      documents,
+    };
+  });
   const today = new Date();
   const todayHeading = formatTodayHeading(today);
   const todayIso = today.toISOString().slice(0, 10);

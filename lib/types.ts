@@ -32,7 +32,8 @@ export type Document = {
 export type Material = {
   id: string;
   user_id: string;
-  document_id: string;
+  /** @deprecated Use document_materials. DB NOT NULL compat only on create. */
+  document_id?: string | null;
   title: string;
   material_type: string;
   file_url_or_path: string | null;
@@ -41,10 +42,27 @@ export type Material = {
   updated_at: string;
 };
 
+export type DocumentMaterial = {
+  id: string;
+  document_id: string;
+  material_id: string;
+  user_id: string;
+  created_at: string;
+};
+
+export type ActionMaterial = {
+  id: string;
+  action_id: string;
+  material_id: string;
+  user_id: string;
+  created_at: string;
+};
+
 export type Action = {
   id: string;
   user_id: string;
   document_id: string;
+  /** @deprecated Use action_materials junction. Not written by new code. */
   material_id: string | null;
   title: string;
   done: boolean;
@@ -53,7 +71,7 @@ export type Action = {
   today_sort_order: number | null;
   created_at: string;
   updated_at: string;
-  materials?: Pick<Material, "id" | "title"> | null;
+  materials?: Pick<Material, "id" | "title">[];
 };
 
 export type WorkflowTemplate = {

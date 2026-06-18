@@ -7,21 +7,21 @@
 | Frontend | Next.js 15 (App Router), React, TypeScript |
 | Стили | Plain CSS, design tokens в `app/globals.css` |
 | Backend / DB | Supabase (Postgres + Auth) |
-| Деплой | Vercel (планируется) |
+| Деплой | Vercel |
 | Мутации данных | Next.js Server Actions |
 
 ## Next.js App Router
 
 - Страницы в `app/` — Server Components по умолчанию.
-- Client Components только там, где нужна интерактивность (например, `ActionChecklistItem` — auto-save on blur).
+- Client Components только там, где нужна интерактивность (checklist, typeahead, inline edit).
 - `middleware.ts` — refresh сессии Supabase, защита маршрутов.
-- `app/documents/actions.ts`, `app/templates/actions.ts` — Server Actions с `"use server"`.
+- Server Actions: `app/documents/actions.ts`, `app/templates/actions.ts`, `app/materials/actions.ts` (план), `app/nihuyasi/actions.ts` (план).
 
 ## Supabase
 
 - **Auth:** email + password, сессия в cookies через `@supabase/ssr`.
 - **RLS:** все пользовательские таблицы — `auth.uid() = user_id`.
-- **Клиенты:** `lib/supabase/client.ts` (browser), `lib/supabase/server.ts` (server), `lib/supabase/middleware.ts`.
+- **Клиенты:** `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts`.
 
 Переменные окружения:
 
@@ -30,76 +30,107 @@
 
 ## Server Actions
 
-Основные группы:
-
 | Файл | Операции |
 |------|----------|
-| `app/documents/actions.ts` | documents, actions, materials, generateActions, reorderActions, reorderTodayActions, toggleActionDone, toggleActionToday |
-| `app/templates/actions.ts` | workflow_templates_v2 CRUD |
+| `app/documents/actions.ts` | documents, actions, action_materials, generateActions, reorder, toggle done/today, **updateDocument** (план) |
+| `app/templates/actions.ts` | workflow_templates_v2 CRUD, **updateTemplate** (план) |
+| `app/materials/actions.ts` (план) | global materials CRUD, document_materials link/unlink, search |
+| `app/nihuyasi/actions.ts` (план) | nihuyasi CRUD |
 
-После мутаций — `revalidatePath` для затронутых маршрутов (`/documents`, `/documents/[id]`, `/today`, `/templates`).
+После мутаций — `revalidatePath` для затронутых маршрутов.
 
 ## Сущности БД
 
-### Актуальные (v0.2)
+### v0.3 (план — global materials + nihuyasi)
 
 **documents**
-- `title`, `document_type`
-- `user_id`, timestamps
+- `title` — unique `(user_id, title)` *(новое)*
+- `document_type`, `user_id`, timestamps
 
-**materials**
-- `title`, `material_type`, `file_url_or_path`, `notes`
-- `document_id`, `user_id`, timestamps
+**materials** (global)
+- `title` — unique `(user_id, title)` *(новое)*
+- `material_type`, `file_url_or_path`, `notes`
+- `user_id`, timestamps
+- **без записи в** `document_id` *(deprecated, колонка сохранена)*
+
+**document_materials** *(новая)*
+- `document_id`, `material_id`, `user_id`, `created_at`
+- unique: `(document_id, material_id)`
 
 **actions**
-- `title`, `document_id`, `material_id` (nullable)
-- `done` boolean, `today` boolean
-- `sort_order` integer (0-based, порядок в документе)
-- `today_sort_order` integer nullable (порядок на `/today`, только при `today = true`)
+- `title`, `document_id`, `material_id` (deprecated)
+- `done`, `today`, `sort_order`, `today_sort_order`
 - `user_id`, timestamps
 
+**action_materials**
+- many-to-many actions ↔ materials
+- unique: `(action_id, material_id)`
+
 **workflow_templates_v2**
-- `document_type`, `action_titles[]` (text array)
-- `user_id`, timestamps
+- `document_type`, `action_titles[]`
 - unique: `(user_id, document_type)`
+
+**nihuyasi** *(новая)*
+- `user_id`, `date`, `text`, timestamps
+
+Подробнее: `docs/materials-architecture.md`, `docs/nihuyasi.md`.
+
+### v0.2 (текущее prod до миграции 008)
+
+**materials** — с полем `document_id` (будет заменено на `document_materials`).
 
 ### Legacy (не развиваются)
 
-**tasks** — старая модель с enum-статусами (`new`, `decision`, `stuck`, `done`, `let_go`). Таблица сохранена, UI удалён.
-
-**projects** — не используется в v0.2.
-
-**workflow_templates** (v0.1) — `name` + `steps` jsonb. Заменена `workflow_templates_v2`, таблица не удалена.
+**tasks**, **projects**, **workflow_templates** (v0.1).
 
 ## Маршруты
 
-| Маршрут | Назначение | UI-статус |
-|---------|------------|-----------|
-| `/` | Лендинг | публичный |
+| Маршрут | Назначение | Статус |
+|---------|------------|--------|
+| `/` | Landing | публичный |
 | `/login` | Вход | публичный |
-| `/documents` | Список документов | AppShell, Notion-like |
-| `/documents/new` | Создание документа | AppShell |
-| `/documents/[id]` | Страница документа | AppShell, checklist UI |
-| `/templates` | Список шаблонов | AppShell |
-| `/templates/new` | Новый шаблон | AppShell |
-| `/templates/[id]/edit` | Редактирование шаблона | legacy top Nav |
-| `/today` | Действия в фокусе | legacy top Nav |
-| `/auth/callback`, `/auth/logout` | Auth flows | — |
+| `/today` | Focus actions | AppShell |
+| `/documents`, `/documents/new`, `/documents/[id]` | Documents | AppShell |
+| `/templates`, `/templates/new`, `/templates/[id]/edit` | Templates | AppShell |
+| `/materials` | Global materials table | **план v0.3** |
+| `/materials/new` | Create material + document picker | **план v0.3** |
+| `/materials/[id]` | Material card (documents + actions) | AppShell, **расширить v0.3** |
+| `/nihuyasi` | Nihuyasi feed | **план v0.3** |
+| `/auth/callback`, `/auth/logout` | Auth | — |
 
-## Legacy
+## Middleware
 
-- Таблицы `tasks`, `projects`, `workflow_templates` (v0.1).
-- TypeScript-типы `Task`, `TaskStatus`, `Project`, `WorkflowTemplate` в `lib/types.ts`.
-- `components/Nav.tsx` — top navigation для `/today` и `/templates/[id]/edit`.
-- Статусная модель задач — полностью выведена из UI.
+Protected prefixes:
+
+- `/today`, `/templates`, `/documents`, `/materials`, `/nihuyasi` *(добавить)*
+
+## Навигация
+
+| Shell | Пункты |
+|-------|--------|
+| Desktop sidebar | Сегодня · Документы · Шаблоны · **Материалы** · **Нихуяси** · Выйти |
+| Mobile bottom nav | Сегодня · Документы · Шаблоны *(без изменений)* |
+| Mobile hamburger | Материалы · Нихуяси · Выйти |
 
 ## Миграции
 
-Файлы в `supabase/migrations/`:
+| # | Файл | Содержание |
+|---|------|------------|
+| 001 | `001_initial.sql` | tasks, projects, workflow_templates (legacy) |
+| 002 | `002_v0_2_documents.sql` | documents, materials, actions, workflow_templates_v2 |
+| 003–006 | actions flags, sort orders | |
+| 007 | `007_action_materials.sql` | action_materials junction |
+| **008** | `008_global_materials.sql` *(план)* | document_materials, migrate, drop document_id, unique titles |
+| **009** | `009_nihuyasi.sql` *(план)* | nihuyasi table + RLS |
 
-1. `001_initial.sql` — tasks, projects, workflow_templates (v0.1)
-2. `002_v0_2_documents.sql` — documents, materials, actions, workflow_templates_v2
-3. `003_actions_done.sql` — `actions.done`
-4. `004_actions_today.sql` — `actions.today`
-5. `005_actions_sort_order.sql` — `actions.sort_order` (drag-and-drop reorder)
-6. `006_actions_today_sort_order.sql` — `actions.today_sort_order` (reorder на `/today`)
+## Legacy
+
+- Таблицы и типы v0.1 — frozen.
+- `actions.material_id` — deprecated, не удалять.
+
+## Связанные документы
+
+- `docs/materials-architecture.md` — global materials
+- `docs/nihuyasi.md` — модуль Nihuyasi
+- `docs/design-principles.md` — UI-паттерны
+- `docs/deployment.md` — Vercel

@@ -1,9 +1,12 @@
-import { generateActions } from "@/app/documents/actions";
+import { generateActions, updateDocumentTitle } from "@/app/documents/actions";
 import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
+import { InlineEditableTitle } from "@/components/InlineEditableTitle";
 import { AppShell } from "@/components/AppShell";
 import { createClient } from "@/lib/supabase/server";
-import type { Action, Document, Material, WorkflowTemplateV2 } from "@/lib/types";
+import { mapActionsMaterials } from "@/lib/mapActionMaterials";
+import { mapDocumentMaterialsFromRows } from "@/lib/mapDocumentMaterials";
+import type { Document, WorkflowTemplateV2 } from "@/lib/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -47,23 +50,23 @@ export default async function DocumentPage({
 
   const document = documentData as Document;
 
-  const [{ data: actionsData }, { data: materialsData }] = await Promise.all([
-    supabase
-      .from("actions")
-      .select("*, materials(id, title)")
-      .eq("document_id", id)
-      .eq("user_id", user.id)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("materials")
-      .select("*")
-      .eq("document_id", id)
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: true }),
-  ]);
+  const [{ data: actionsData }, { data: documentMaterialsData }] =
+    await Promise.all([
+      supabase
+        .from("actions")
+        .select("*, action_materials(material_id, materials(id, title))")
+        .eq("document_id", id)
+        .eq("user_id", user.id)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("document_materials")
+        .select("material_id, materials(*)")
+        .eq("document_id", id)
+        .eq("user_id", user.id),
+    ]);
 
-  const actions = (actionsData ?? []) as Action[];
-  const materials = (materialsData ?? []) as Material[];
+  const actions = mapActionsMaterials(actionsData ?? []);
+  const materials = mapDocumentMaterialsFromRows(documentMaterialsData ?? []);
 
   let template: WorkflowTemplateV2 | null = null;
 
@@ -78,6 +81,15 @@ export default async function DocumentPage({
     template = (templateData as WorkflowTemplateV2 | null) ?? null;
   }
 
+  async function saveDocumentTitle(title: string) {
+    "use server";
+
+    const formData = new FormData();
+    formData.set("id", document.id);
+    formData.set("title", title);
+    return updateDocumentTitle(formData);
+  }
+
   return (
     <AppShell>
       <div className="content-page doc-page">
@@ -87,7 +99,10 @@ export default async function DocumentPage({
 
         <div className="doc-page-stack">
           <header className="doc-page-header">
-            <h1 className="doc-page-title">{document.title}</h1>
+            <InlineEditableTitle
+              value={document.title}
+              onSave={saveDocumentTitle}
+            />
             <p className="doc-page-type">{document.document_type}</p>
           </header>
 

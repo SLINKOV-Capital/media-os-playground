@@ -1,5 +1,7 @@
 "use server";
 
+import type { ActionResult } from "@/lib/actionResult";
+import { isValidMaterialType } from "@/lib/materialTypes";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -12,6 +14,268 @@ function revalidateActionContexts(documentId: string) {
 
 function revalidateDocument(documentId: string) {
   revalidateActionContexts(documentId);
+}
+
+function revalidateMaterial(materialId: string, documentId?: string) {
+  revalidatePath("/materials");
+  revalidatePath(`/materials/${materialId}`);
+
+  if (documentId) {
+    revalidateDocument(documentId);
+  }
+}
+
+async function linkDocumentMaterialRecord(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  documentId: string,
+  materialId: string,
+  userId: string
+) {
+  const { error } = await supabase.from("document_materials").insert({
+    document_id: documentId,
+    material_id: materialId,
+    user_id: userId,
+  });
+
+  if (error && error.code !== "23505") {
+    console.error("Failed to link material to document:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+async function findExistingMaterialByTitle(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  title: string,
+  excludeId?: string
+) {
+  const normalized = title.trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("materials")
+    .select("id, title, material_type")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Failed to find material by title:", error.message);
+    return null;
+  }
+
+  return (
+    (data ?? []).find(
+      (material) =>
+        material.id !== excludeId &&
+        material.title.trim().toLowerCase() === normalized
+    ) ?? null
+  );
+}
+
+async function findExistingDocumentByTitle(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  title: string,
+  excludeId?: string
+) {
+  const normalized = title.trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("documents")
+    .select("id, title")
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("Failed to find document by title:", error.message);
+    return null;
+  }
+
+  return (
+    (data ?? []).find(
+      (document) =>
+        document.id !== excludeId &&
+        document.title.trim().toLowerCase() === normalized
+    ) ?? null
+  );
+}
+
+export async function updateDocumentTitle(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const id = String(formData.get("id") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+
+  if (!id) {
+    return { ok: false, error: "not_found" };
+  }
+
+  if (!title) {
+    return { ok: false, error: "empty" };
+  }
+
+  const duplicate = await findExistingDocumentByTitle(
+    supabase,
+    user.id,
+    title,
+    id
+  );
+
+  if (duplicate) {
+    return { ok: false, error: "duplicate_title" };
+  }
+
+  const { error } = await supabase
+    .from("documents")
+    .update({ title })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false, error: "duplicate_title" };
+    }
+
+    console.error("Failed to update document title:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  revalidateDocument(id);
+  return { ok: true };
+}
+
+export async function updateMaterialTitle(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const id = String(formData.get("id") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+
+  if (!id) {
+    return { ok: false, error: "not_found" };
+  }
+
+  if (!title) {
+    return { ok: false, error: "empty" };
+  }
+
+  const duplicate = await findExistingMaterialByTitle(
+    supabase,
+    user.id,
+    title,
+    id
+  );
+
+  if (duplicate) {
+    return { ok: false, error: "duplicate_title" };
+  }
+
+  const { error } = await supabase
+    .from("materials")
+    .update({ title })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false, error: "duplicate_title" };
+    }
+
+    console.error("Failed to update material title:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  revalidateMaterial(id);
+  return { ok: true };
+}
+
+export async function updateMaterial(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const id = String(formData.get("id") ?? "");
+
+  if (!id) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const updates: {
+    material_type?: string;
+    file_url_or_path?: string | null;
+    notes?: string | null;
+  } = {};
+
+  if (formData.has("material_type")) {
+    const material_type = String(formData.get("material_type") ?? "").trim();
+
+    if (!isValidMaterialType(material_type)) {
+      return { ok: false, error: "invalid_type" };
+    }
+
+    updates.material_type = material_type;
+  }
+
+  if (formData.has("file_url_or_path")) {
+    const file_url_or_path = String(
+      formData.get("file_url_or_path") ?? ""
+    ).trim();
+    updates.file_url_or_path = file_url_or_path || null;
+  }
+
+  if (formData.has("notes")) {
+    const notes = String(formData.get("notes") ?? "").trim();
+    updates.notes = notes || null;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return { ok: true };
+  }
+
+  const { error } = await supabase
+    .from("materials")
+    .update(updates)
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to update material:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  revalidateMaterial(id);
+  return { ok: true };
 }
 
 export async function createDocument(formData: FormData): Promise<void> {
@@ -192,8 +456,6 @@ export async function updateAction(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   const documentId = String(formData.get("document_id") ?? "");
   const title = String(formData.get("title") ?? "").trim();
-  const materialIdRaw = String(formData.get("material_id") ?? "");
-  const material_id = materialIdRaw === "" ? null : materialIdRaw;
 
   if (!id || !documentId || !title) {
     return;
@@ -201,13 +463,124 @@ export async function updateAction(formData: FormData): Promise<void> {
 
   const { error } = await supabase
     .from("actions")
-    .update({ title, material_id })
+    .update({ title })
     .eq("id", id)
     .eq("user_id", user.id)
     .eq("document_id", documentId);
 
   if (error) {
     console.error("Failed to update action:", error.message);
+    return;
+  }
+
+  revalidateDocument(documentId);
+}
+
+export async function linkActionMaterial(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const actionId = String(formData.get("action_id") ?? "");
+  const materialId = String(formData.get("material_id") ?? "");
+  const documentId = String(formData.get("document_id") ?? "");
+
+  if (!actionId || !materialId || !documentId) {
+    return;
+  }
+
+  const [
+    { data: action, error: actionError },
+    { data: material, error: materialError },
+    { data: documentMaterial, error: documentMaterialError },
+  ] = await Promise.all([
+    supabase
+      .from("actions")
+      .select("id, document_id")
+      .eq("id", actionId)
+      .eq("user_id", user.id)
+      .eq("document_id", documentId)
+      .maybeSingle(),
+    supabase
+      .from("materials")
+      .select("id")
+      .eq("id", materialId)
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("document_materials")
+      .select("id")
+      .eq("document_id", documentId)
+      .eq("material_id", materialId)
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
+
+  if (
+    actionError ||
+    materialError ||
+    documentMaterialError ||
+    !action ||
+    !material ||
+    !documentMaterial
+  ) {
+    console.error(
+      "Failed to validate action/material link:",
+      actionError?.message ??
+        materialError?.message ??
+        documentMaterialError?.message
+    );
+    return;
+  }
+
+  const { error } = await supabase.from("action_materials").insert({
+    action_id: actionId,
+    material_id: materialId,
+    user_id: user.id,
+  });
+
+  if (error) {
+    if (error.code !== "23505") {
+      console.error("Failed to link action material:", error.message);
+    }
+    return;
+  }
+
+  revalidateDocument(documentId);
+}
+
+export async function unlinkActionMaterial(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const actionId = String(formData.get("action_id") ?? "");
+  const materialId = String(formData.get("material_id") ?? "");
+  const documentId = String(formData.get("document_id") ?? "");
+
+  if (!actionId || !materialId || !documentId) {
+    return;
+  }
+
+  const { error } = await supabase
+    .from("action_materials")
+    .delete()
+    .eq("action_id", actionId)
+    .eq("material_id", materialId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to unlink action material:", error.message);
     return;
   }
 
@@ -471,6 +844,158 @@ export async function reorderTodayActions(
   revalidatePath("/today");
 }
 
+export async function linkMaterialToDocument(formData: FormData): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const documentId = String(formData.get("document_id") ?? "");
+  const materialId = String(formData.get("material_id") ?? "");
+
+  if (!documentId || !materialId) {
+    return;
+  }
+
+  const [{ data: document, error: documentError }, { data: material, error: materialError }] =
+    await Promise.all([
+      supabase
+        .from("documents")
+        .select("id")
+        .eq("id", documentId)
+        .eq("user_id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("materials")
+        .select("id")
+        .eq("id", materialId)
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+
+  if (documentError || materialError || !document || !material) {
+    console.error(
+      "Failed to validate document/material link:",
+      documentError?.message ?? materialError?.message
+    );
+    return;
+  }
+
+  const { error } = await supabase.from("document_materials").insert({
+    document_id: documentId,
+    material_id: materialId,
+    user_id: user.id,
+  });
+
+  if (error) {
+    if (error.code !== "23505") {
+      console.error("Failed to link material to document:", error.message);
+    }
+    return;
+  }
+
+  revalidateMaterial(materialId, documentId);
+}
+
+export async function findMaterialByTitle(title: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return findExistingMaterialByTitle(supabase, user.id, title);
+}
+
+export async function unlinkMaterialFromDocument(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const documentId = String(formData.get("document_id") ?? "");
+  const materialId = String(formData.get("material_id") ?? "");
+
+  if (!documentId || !materialId) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { count, error: countError } = await supabase
+    .from("document_materials")
+    .select("*", { count: "exact", head: true })
+    .eq("material_id", materialId)
+    .eq("user_id", user.id);
+
+  if (countError) {
+    console.error("Failed to count document links:", countError.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  if ((count ?? 0) <= 1) {
+    return { ok: false, error: "last_document" };
+  }
+
+  const { error } = await supabase
+    .from("document_materials")
+    .delete()
+    .eq("document_id", documentId)
+    .eq("material_id", materialId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to unlink material from document:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  revalidateMaterial(materialId, documentId);
+  return { ok: true };
+}
+
+export async function searchMaterials(query: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const trimmed = query.trim();
+
+  if (!trimmed) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("materials")
+    .select("id, title, material_type")
+    .eq("user_id", user.id)
+    .ilike("title", `%${trimmed}%`)
+    .order("title", { ascending: true })
+    .limit(20);
+
+  if (error) {
+    console.error("Failed to search materials:", error.message);
+    return [];
+  }
+
+  return data ?? [];
+}
+
 export async function createMaterial(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const {
@@ -486,24 +1011,108 @@ export async function createMaterial(formData: FormData): Promise<void> {
   const material_type = String(formData.get("material_type") ?? "").trim();
   const file_url_or_path = String(formData.get("file_url_or_path") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
+  const redirectTarget = String(formData.get("redirect") ?? "");
 
   if (!documentId || !title || !material_type) {
     return;
   }
 
-  const { error } = await supabase.from("materials").insert({
-    user_id: user.id,
-    document_id: documentId,
-    title,
-    material_type,
-    file_url_or_path: file_url_or_path || null,
-    notes: notes || null,
-  });
-
-  if (error) {
-    console.error("Failed to create material:", error.message);
+  if (!isValidMaterialType(material_type)) {
     return;
   }
 
-  revalidateDocument(documentId);
+  const { data: document, error: documentError } = await supabase
+    .from("documents")
+    .select("id")
+    .eq("id", documentId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (documentError || !document) {
+    console.error("Failed to fetch document:", documentError?.message);
+    return;
+  }
+
+  const existingMaterial = await findExistingMaterialByTitle(
+    supabase,
+    user.id,
+    title
+  );
+
+  if (existingMaterial) {
+    const linked = await linkDocumentMaterialRecord(
+      supabase,
+      documentId,
+      existingMaterial.id,
+      user.id
+    );
+
+    if (!linked) {
+      return;
+    }
+
+    revalidateMaterial(existingMaterial.id, documentId);
+
+    if (redirectTarget === "materials") {
+      redirect(`/materials/${existingMaterial.id}`);
+    }
+
+    return;
+  }
+
+  const { data: material, error: materialError } = await supabase
+    .from("materials")
+    .insert({
+      user_id: user.id,
+      document_id: documentId,
+      title,
+      material_type,
+      file_url_or_path: file_url_or_path || null,
+      notes: notes || null,
+    })
+    .select("id")
+    .single();
+
+  if (materialError || !material) {
+    if (materialError?.code === "23505") {
+      const duplicate = await findExistingMaterialByTitle(supabase, user.id, title);
+
+      if (duplicate) {
+        await linkDocumentMaterialRecord(
+          supabase,
+          documentId,
+          duplicate.id,
+          user.id
+        );
+        revalidateMaterial(duplicate.id, documentId);
+
+        if (redirectTarget === "materials") {
+          redirect(`/materials/${duplicate.id}`);
+        }
+      }
+
+      return;
+    }
+
+    console.error("Failed to create material:", materialError?.message);
+    return;
+  }
+
+  const linked = await linkDocumentMaterialRecord(
+    supabase,
+    documentId,
+    material.id,
+    user.id
+  );
+
+  if (!linked) {
+    return;
+  }
+
+  revalidateMaterial(material.id, documentId);
+
+  if (redirectTarget === "materials") {
+    redirect(`/materials/${material.id}`);
+  }
 }
+

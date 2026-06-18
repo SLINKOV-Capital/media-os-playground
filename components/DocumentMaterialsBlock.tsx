@@ -1,4 +1,5 @@
-import { MaterialAddControl } from "@/components/MaterialAddControl";
+import { MaterialAddPanel } from "@/components/MaterialAddPanel";
+import { getMaterialTypeIcon } from "@/lib/materialTypes";
 import type { Material } from "@/lib/types";
 import Link from "next/link";
 
@@ -11,6 +12,8 @@ export function DocumentMaterialsBlock({
   documentId,
   materials,
 }: DocumentMaterialsBlockProps) {
+  const linkedMaterialIds = materials.map((material) => material.id);
+
   return (
     <section className="doc-section">
       <div className="section-header">
@@ -23,8 +26,11 @@ export function DocumentMaterialsBlock({
             <li key={material.id} className="material-row">
               <Link
                 href={`/materials/${material.id}`}
-                className="material-row-title"
+                className="material-row-title material-row-title-with-icon"
               >
+                <span className="material-type-icon" aria-hidden="true">
+                  {getMaterialTypeIcon(material.material_type)}
+                </span>
                 {material.title}
               </Link>
               <div className="material-row-meta">
@@ -48,7 +54,10 @@ export function DocumentMaterialsBlock({
         </ul>
       )}
 
-      <MaterialAddControl documentId={documentId} />
+      <MaterialAddPanel
+        documentId={documentId}
+        linkedMaterialIds={linkedMaterialIds}
+      />
     </section>
   );
 }

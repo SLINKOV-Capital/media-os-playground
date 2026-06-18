@@ -1,5 +1,5 @@
-import { WorkflowTemplateForm } from "@/components/WorkflowTemplateForm";
 import { AppShell } from "@/components/AppShell";
+import { TemplateEditorShell } from "@/components/TemplateEditorShell";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -21,14 +21,7 @@ export default async function NewTemplatePage() {
           ← Шаблоны
         </Link>
 
-        <div className="doc-page-stack">
-          <header className="doc-page-header">
-            <h1 className="doc-page-title">Новый шаблон</h1>
-            <p className="doc-page-type">тип страницы документа</p>
-          </header>
-
-          <WorkflowTemplateForm />
-        </div>
+        <TemplateEditorShell />
       </div>
     </AppShell>
   );
