@@ -40,7 +40,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/today") ||
     pathname.startsWith("/templates") ||
     pathname.startsWith("/documents") ||
-    pathname.startsWith("/materials");
+    pathname.startsWith("/materials") ||
+    pathname.startsWith("/nihuyasi");
   const isLogin = pathname === "/login";
 
   if (isProtected && !user) {

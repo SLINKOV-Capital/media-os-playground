@@ -1,10 +1,11 @@
 import { AppShell } from "@/components/AppShell";
 import { SortableTodayList } from "@/components/SortableTodayList";
+import { TodayNihuyasiSection } from "@/components/TodayNihuyasiSection";
 import type { FocusAction } from "@/components/TodayItem";
 import { createClient } from "@/lib/supabase/server";
-import { formatTodayHeading } from "@/lib/format";
+import { formatLocalIsoDate, formatTodayHeading } from "@/lib/format";
 import { mapActionMaterials } from "@/lib/mapActionMaterials";
-import type { Document } from "@/lib/types";
+import type { Document, NihuyasiEntry } from "@/lib/types";
 import { redirect } from "next/navigation";
 
 export default async function TodayPage() {
@@ -17,20 +18,37 @@ export default async function TodayPage() {
     redirect("/login");
   }
 
-  const { data, error } = await supabase
-    .from("actions")
-    .select(
-      "*, documents(id, title), action_materials(material_id, materials(id, title))"
-    )
-    .eq("today", true)
-    .eq("user_id", user.id)
-    .order("today_sort_order", { ascending: true });
+  const today = new Date();
+  const todayIso = formatLocalIsoDate(today);
+  const todayHeading = formatTodayHeading(today);
 
-  if (error) {
-    console.error("Failed to fetch focus actions:", error.message);
+  const [{ data: actionsData, error: actionsError }, { data: nihuyasiData, error: nihuyasiError }] =
+    await Promise.all([
+      supabase
+        .from("actions")
+        .select(
+          "*, documents(id, title), action_materials(material_id, materials(id, title))"
+        )
+        .eq("today", true)
+        .eq("user_id", user.id)
+        .order("today_sort_order", { ascending: true }),
+      supabase
+        .from("nihuyasi")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("date", todayIso)
+        .order("created_at", { ascending: true }),
+    ]);
+
+  if (actionsError) {
+    console.error("Failed to fetch focus actions:", actionsError.message);
   }
 
-  const focusActions: FocusAction[] = (data ?? []).map((row) => {
+  if (nihuyasiError) {
+    console.error("Failed to fetch nihuyasi entries:", nihuyasiError.message);
+  }
+
+  const focusActions: FocusAction[] = (actionsData ?? []).map((row) => {
     const rowData = row as Parameters<typeof mapActionMaterials>[0] & {
       documents: Pick<Document, "id" | "title">;
     };
@@ -41,9 +59,8 @@ export default async function TodayPage() {
       documents,
     };
   });
-  const today = new Date();
-  const todayHeading = formatTodayHeading(today);
-  const todayIso = today.toISOString().slice(0, 10);
+
+  const nihuyasiEntries = (nihuyasiData ?? []) as NihuyasiEntry[];
 
   return (
     <AppShell>
@@ -65,6 +82,11 @@ export default async function TodayPage() {
         ) : (
           <SortableTodayList actions={focusActions} />
         )}
+
+        <TodayNihuyasiSection
+          initialEntries={nihuyasiEntries}
+          todayDate={todayIso}
+        />
       </div>
     </AppShell>
   );

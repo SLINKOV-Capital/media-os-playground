@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MobileMenu } from "@/components/MobileMenu";
 
 export function MobileTopBar() {
   return (
@@ -6,9 +7,7 @@ export function MobileTopBar() {
       <Link href="/documents" className="mobile-top-bar-brand">
         Media OS
       </Link>
-      <form action="/auth/logout" method="post" className="mobile-top-bar-logout">
-        <button type="submit">Выйти</button>
-      </form>
+      <MobileMenu />
     </header>
   );
 }
