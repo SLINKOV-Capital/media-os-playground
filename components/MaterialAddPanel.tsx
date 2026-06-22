@@ -10,7 +10,7 @@ import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
 import { getMaterialTypeIcon } from "@/lib/materialTypes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 type MaterialSearchResult = {
   id: string;
@@ -36,6 +36,7 @@ export function MaterialAddPanel({
   );
   const [isSearching, startSearchTransition] = useTransition();
   const [isLinking, startLinkTransition] = useTransition();
+  const titleRef = useRef<HTMLTextAreaElement>(null);
 
   const linkedMaterialSet = useMemo(
     () => new Set(linkedMaterialIds),
@@ -68,6 +69,23 @@ export function MaterialAddPanel({
     }, 300);
 
     return () => window.clearTimeout(timer);
+  }, [open, title]);
+
+  function resizeTitleField() {
+    const element = titleRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  }
+
+  useEffect(() => {
+    if (open) {
+      resizeTitleField();
+    }
   }, [open, title]);
 
   function closePanel() {
@@ -104,7 +122,7 @@ export function MaterialAddPanel({
 
   return (
     <div className="material-add-panel">
-      <div className="notion-property">
+      <div className="notion-property notion-property-textarea">
         <label
           htmlFor={`material-search-${documentId}`}
           className="notion-property-label"
@@ -112,11 +130,14 @@ export function MaterialAddPanel({
           Название
         </label>
         <div className="notion-property-value">
-          <input
+          <textarea
+            ref={titleRef}
             id={`material-search-${documentId}`}
-            type="text"
+            className="material-add-title-field"
+            rows={1}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
+            onInput={resizeTitleField}
             autoFocus
             placeholder="Найти или создать материал…"
           />

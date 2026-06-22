@@ -17,14 +17,44 @@ import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  createContext,
+  useContext,
+  useEffect,
   useRef,
   useState,
   useTransition,
   type MouseEvent,
+  type PointerEvent,
+  type TouchEvent,
   type CSSProperties,
 } from "react";
 
 type LinkedMaterial = Pick<Material, "id" | "title">;
+
+type ExpandedActionContextValue = {
+  expandedActionId: string | null;
+  setExpandedActionId: (actionId: string | null) => void;
+};
+
+const ExpandedActionContext = createContext<ExpandedActionContextValue | null>(
+  null
+);
+
+export function ExpandedActionProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [expandedActionId, setExpandedActionId] = useState<string | null>(null);
+
+  return (
+    <ExpandedActionContext.Provider
+      value={{ expandedActionId, setExpandedActionId }}
+    >
+      {children}
+    </ExpandedActionContext.Provider>
+  );
+}
 
 type ActionChecklistItemProps = {
   action: Action;
@@ -42,7 +72,7 @@ type ActionChecklistItemProps = {
 };
 
 const INTERACTIVE_SELECTOR =
-  "button, input, a, .checklist-drag-handle, .checklist-checkbox, .checklist-title, .focus-pill, .destructive-link, .material-pill, .checklist-unlink-material, .checklist-link-material";
+  "button, input, a, .checklist-drag-handle, .checklist-checkbox, .checklist-title, .focus-pill, .destructive-link, .material-pill, .checklist-unlink-material, .checklist-link-material, .checklist-materials-add-hint";
 
 function GripIcon() {
   return (
@@ -84,8 +114,24 @@ function ChevronIcon({ expanded }: { expanded: boolean }) {
   );
 }
 
-function stopRowToggle(event: { stopPropagation: () => void }) {
+type PropagationEvent = {
+  stopPropagation: () => void;
+};
+
+function stopRowToggle(event: PropagationEvent) {
   event.stopPropagation();
+}
+
+function getEventTargetElement(target: EventTarget | null): HTMLElement | null {
+  if (target instanceof HTMLElement) {
+    return target;
+  }
+
+  if (target instanceof Node) {
+    return target.parentElement;
+  }
+
+  return null;
 }
 
 function getCollapsedMaterialsSummary(linkedMaterials: LinkedMaterial[]) {
@@ -118,12 +164,26 @@ export function ActionChecklistItem({
   isDragging = false,
 }: ActionChecklistItemProps) {
   const router = useRouter();
+  const expandedContext = useContext(ExpandedActionContext);
   const [isPending, startTransition] = useTransition();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [localExpanded, setLocalExpanded] = useState(false);
+  const [linkedMaterials, setLinkedMaterials] = useState<LinkedMaterial[]>(
+    () => action.materials ?? []
+  );
+  const [materialsError, setMaterialsError] = useState<string | null>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const lastSavedTitle = useRef(action.title);
 
-  const linkedMaterials = action.materials ?? [];
+  useEffect(() => {
+    setLinkedMaterials(action.materials ?? []);
+  }, [action.id, action.materials]);
+
+  const isExpanded = isDragOverlay
+    ? false
+    : expandedContext
+      ? expandedContext.expandedActionId === action.id
+      : localExpanded;
+
   const linkedMaterialIds = new Set(linkedMaterials.map((material) => material.id));
   const availableMaterials = materials.filter(
     (material) => !linkedMaterialIds.has(material.id)
@@ -177,23 +237,53 @@ export function ActionChecklistItem({
   }
 
   async function handleLinkMaterial(materialId: string) {
+    const material = materials.find((item) => item.id === materialId);
+
+    if (!material) {
+      return;
+    }
+
+    const previousLinked = linkedMaterials;
+    const optimisticMaterial: LinkedMaterial = {
+      id: material.id,
+      title: material.title,
+    };
+
+    setMaterialsError(null);
+    setLinkedMaterials((current) => [...current, optimisticMaterial]);
+
     const formData = new FormData();
     formData.set("action_id", action.id);
     formData.set("material_id", materialId);
     formData.set("document_id", documentId);
 
-    await linkActionMaterial(formData);
-    refresh();
+    const result = await linkActionMaterial(formData);
+
+    if (!result.ok) {
+      setLinkedMaterials(previousLinked);
+      setMaterialsError(result.error);
+    }
   }
 
   async function handleUnlinkMaterial(materialId: string) {
+    const previousLinked = linkedMaterials;
+
+    setMaterialsError(null);
+    setLinkedMaterials((current) =>
+      current.filter((material) => material.id !== materialId)
+    );
+
     const formData = new FormData();
     formData.set("action_id", action.id);
     formData.set("material_id", materialId);
     formData.set("document_id", documentId);
 
-    await unlinkActionMaterial(formData);
-    refresh();
+    const result = await unlinkActionMaterial(formData);
+
+    if (!result.ok) {
+      setLinkedMaterials(previousLinked);
+      setMaterialsError(result.error);
+    }
   }
 
   async function handleDelete() {
@@ -204,22 +294,37 @@ export function ActionChecklistItem({
     refresh();
   }
 
-  function toggleExpanded() {
+  function setExpanded(next: boolean) {
     if (isDragOverlay) {
       return;
     }
 
-    setIsExpanded((value) => !value);
+    if (expandedContext) {
+      expandedContext.setExpandedActionId(next ? action.id : null);
+      return;
+    }
+
+    setLocalExpanded(next);
   }
 
-  function handleRowClick(event: MouseEvent<HTMLElement>) {
+  function toggleExpanded() {
+    setExpanded(!isExpanded);
+  }
+
+  function openAttachPicker() {
+    setExpanded(true);
+  }
+
+  function handleToggleZoneClick(
+    event: MouseEvent<HTMLElement> | PointerEvent<HTMLElement> | TouchEvent<HTMLElement>
+  ) {
     if (isDragOverlay) {
       return;
     }
 
-    const target = event.target as HTMLElement;
+    const target = getEventTargetElement(event.target);
 
-    if (target.closest(INTERACTIVE_SELECTOR)) {
+    if (target?.closest(INTERACTIVE_SELECTOR)) {
       return;
     }
 
@@ -238,12 +343,7 @@ export function ActionChecklistItem({
     .join(" ");
 
   return (
-    <li
-      ref={setNodeRef}
-      style={style}
-      className={itemClassName}
-      onClick={handleRowClick}
-    >
+    <li ref={setNodeRef} style={style} className={itemClassName}>
       {showDragHandle && (
         <button
           type="button"
@@ -267,7 +367,7 @@ export function ActionChecklistItem({
       />
 
       <div className="checklist-body" aria-expanded={isExpanded}>
-        <div className="checklist-main">
+        <div className="checklist-main" onClick={handleToggleZoneClick}>
           <button
             type="button"
             className="checklist-expand"
@@ -322,11 +422,23 @@ export function ActionChecklistItem({
         </div>
 
         {!isExpanded && (
-          <div className="checklist-materials-row">
+          <div
+            className="checklist-materials-row"
+            onClick={handleToggleZoneClick}
+          >
             <span className="checklist-materials-label">Материалы</span>
             <div className="checklist-materials-summary">
               {collapsedSummary.kind === "empty" && (
-                <span className="checklist-materials-add-hint">+ материал</span>
+                <button
+                  type="button"
+                  className="checklist-materials-add-hint"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openAttachPicker();
+                  }}
+                >
+                  + материал
+                </button>
               )}
 
               {collapsedSummary.kind === "names" &&
@@ -360,6 +472,12 @@ export function ActionChecklistItem({
           <div className="checklist-materials-panel">
             <p className="checklist-panel-heading">Связанные материалы</p>
 
+            {materialsError && (
+              <p className="checklist-materials-error" role="alert">
+                {materialsError}
+              </p>
+            )}
+
             {linkedMaterials.length > 0 ? (
               <ul className="checklist-linked-materials">
                 {linkedMaterials.map((material) => (
@@ -375,7 +493,7 @@ export function ActionChecklistItem({
                       type="button"
                       className="checklist-unlink-material"
                       onClick={(event) => {
-                        stopRowToggle(event);
+                        event.stopPropagation();
                         void handleUnlinkMaterial(material.id);
                       }}
                     >
@@ -396,15 +514,18 @@ export function ActionChecklistItem({
               </p>
             ) : availableMaterials.length > 0 ? (
               <div className="checklist-attach-materials">
-                <p className="checklist-panel-heading">+ Привязать материал</p>
-                <div className="checklist-add-materials">
+                <p className="checklist-attach-label">+ Привязать материал</p>
+                <div
+                  className="checklist-add-materials"
+                  aria-label="Доступные материалы"
+                >
                   {availableMaterials.map((material) => (
                     <button
                       key={material.id}
                       type="button"
                       className="material-pill checklist-link-material"
                       onClick={(event) => {
-                        stopRowToggle(event);
+                        event.stopPropagation();
                         void handleLinkMaterial(material.id);
                       }}
                     >

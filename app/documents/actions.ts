@@ -476,7 +476,9 @@ export async function updateAction(formData: FormData): Promise<void> {
   revalidateDocument(documentId);
 }
 
-export async function linkActionMaterial(formData: FormData): Promise<void> {
+export async function linkActionMaterial(
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -491,7 +493,7 @@ export async function linkActionMaterial(formData: FormData): Promise<void> {
   const documentId = String(formData.get("document_id") ?? "");
 
   if (!actionId || !materialId || !documentId) {
-    return;
+    return { ok: false, error: "Недостаточно данных для привязки" };
   }
 
   const [
@@ -535,7 +537,7 @@ export async function linkActionMaterial(formData: FormData): Promise<void> {
         materialError?.message ??
         documentMaterialError?.message
     );
-    return;
+    return { ok: false, error: "Не удалось привязать материал" };
   }
 
   const { error } = await supabase.from("action_materials").insert({
@@ -545,16 +547,22 @@ export async function linkActionMaterial(formData: FormData): Promise<void> {
   });
 
   if (error) {
-    if (error.code !== "23505") {
-      console.error("Failed to link action material:", error.message);
+    if (error.code === "23505") {
+      revalidateDocument(documentId);
+      return { ok: true };
     }
-    return;
+
+    console.error("Failed to link action material:", error.message);
+    return { ok: false, error: "Не удалось привязать материал" };
   }
 
   revalidateDocument(documentId);
+  return { ok: true };
 }
 
-export async function unlinkActionMaterial(formData: FormData): Promise<void> {
+export async function unlinkActionMaterial(
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -569,7 +577,7 @@ export async function unlinkActionMaterial(formData: FormData): Promise<void> {
   const documentId = String(formData.get("document_id") ?? "");
 
   if (!actionId || !materialId || !documentId) {
-    return;
+    return { ok: false, error: "Недостаточно данных для отвязки" };
   }
 
   const { error } = await supabase
@@ -581,10 +589,11 @@ export async function unlinkActionMaterial(formData: FormData): Promise<void> {
 
   if (error) {
     console.error("Failed to unlink action material:", error.message);
-    return;
+    return { ok: false, error: "Не удалось отвязать материал" };
   }
 
   revalidateDocument(documentId);
+  return { ok: true };
 }
 
 export async function deleteAction(formData: FormData): Promise<void> {

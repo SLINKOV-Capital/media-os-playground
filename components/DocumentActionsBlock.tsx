@@ -1,5 +1,8 @@
 import { createAction } from "@/app/documents/actions";
-import { ActionChecklistItem } from "@/components/ActionChecklistItem";
+import {
+  ActionChecklistItem,
+  ExpandedActionProvider,
+} from "@/components/ActionChecklistItem";
 import { SortableActionsList } from "@/components/SortableActionsList";
 import type { Action, Material } from "@/lib/types";
 import Link from "next/link";
@@ -41,22 +44,26 @@ export function DocumentActionsBlock({
       ) : visibleActions.length === 0 ? (
         <p className="section-empty">Нет активных действий</p>
       ) : activeOnly ? (
-        <ul className="checklist">
-          {visibleActions.map((action) => (
-            <ActionChecklistItem
-              key={action.id}
-              action={action}
-              documentId={documentId}
-              materials={materials}
-            />
-          ))}
-        </ul>
+        <ExpandedActionProvider>
+          <ul className="checklist">
+            {visibleActions.map((action) => (
+              <ActionChecklistItem
+                key={action.id}
+                action={action}
+                documentId={documentId}
+                materials={materials}
+              />
+            ))}
+          </ul>
+        </ExpandedActionProvider>
       ) : (
-        <SortableActionsList
-          documentId={documentId}
-          actions={visibleActions}
-          materials={materials}
-        />
+        <ExpandedActionProvider>
+          <SortableActionsList
+            documentId={documentId}
+            actions={visibleActions}
+            materials={materials}
+          />
+        </ExpandedActionProvider>
       )}
 
       <form action={createAction} className="checklist-add">
