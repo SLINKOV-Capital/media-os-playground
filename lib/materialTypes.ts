@@ -1,5 +1,6 @@
 export const MATERIAL_TYPES = [
   { value: "link", label: "Ссылка", icon: "🔗" },
+  { value: "youtube", label: "YouTube", icon: "▶️" },
   { value: "file", label: "Файл", icon: "📄" },
   { value: "note", label: "Заметка", icon: "📝" },
   { value: "image", label: "Изображение", icon: "🖼" },

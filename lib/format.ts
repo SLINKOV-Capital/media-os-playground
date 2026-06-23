@@ -1,3 +1,6 @@
+/** Calendar timezone for the Today screen (system contract). */
+export const TODAY_TIMEZONE = "Europe/Moscow";
+
 export function formatDate(value: string): string {
   return new Date(value).toLocaleDateString("ru-RU", {
     day: "numeric",
@@ -6,8 +9,10 @@ export function formatDate(value: string): string {
   });
 }
 
+/** Russian long date for the Today page dateline (always Europe/Moscow). */
 export function formatTodayHeading(date: Date = new Date()): string {
   return date.toLocaleDateString("ru-RU", {
+    timeZone: TODAY_TIMEZONE,
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -15,6 +20,17 @@ export function formatTodayHeading(date: Date = new Date()): string {
   });
 }
 
+/** ISO date (YYYY-MM-DD) in Europe/Moscow — Today page and Today-scoped queries. */
+export function formatMoscowIsoDate(date: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TODAY_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/** ISO date (YYYY-MM-DD) in the runtime local timezone (non-Today screens). */
 export function formatLocalIsoDate(date: Date = new Date()): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");

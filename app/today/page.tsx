@@ -3,7 +3,7 @@ import { SortableTodayList } from "@/components/SortableTodayList";
 import { TodayNihuyasiSection } from "@/components/TodayNihuyasiSection";
 import type { FocusAction } from "@/components/TodayItem";
 import { createClient } from "@/lib/supabase/server";
-import { formatLocalIsoDate, formatTodayHeading } from "@/lib/format";
+import { formatMoscowIsoDate, formatTodayHeading } from "@/lib/format";
 import { mapActionMaterials } from "@/lib/mapActionMaterials";
 import type { Document, NihuyasiEntry } from "@/lib/types";
 import { redirect } from "next/navigation";
@@ -18,9 +18,8 @@ export default async function TodayPage() {
     redirect("/login");
   }
 
-  const today = new Date();
-  const todayIso = formatLocalIsoDate(today);
-  const todayHeading = formatTodayHeading(today);
+  const todayIso = formatMoscowIsoDate();
+  const todayHeading = formatTodayHeading();
 
   const [{ data: actionsData, error: actionsError }, { data: nihuyasiData, error: nihuyasiError }] =
     await Promise.all([

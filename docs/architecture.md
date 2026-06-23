@@ -117,6 +117,19 @@
 | `/nihuyasi` | Nihuyasi feed | **план v0.3** |
 | `/auth/callback`, `/auth/logout` | Auth | — |
 
+### Today — дата и часовой пояс
+
+Контракт: экран **Today** всегда использует календарную дату **Europe/Moscow**, независимо от TZ устройства или сервера Vercel.
+
+| Артефакт | Назначение |
+|----------|------------|
+| `TODAY_TIMEZONE` | `lib/format.ts` — константа `"Europe/Moscow"` |
+| `formatMoscowIsoDate()` | ISO `YYYY-MM-DD` для запросов (Nihuyasi на Today, dateline `dateTime`) |
+| `formatTodayHeading()` | Русский dateline в заголовке Today (с `timeZone: Europe/Moscow`) |
+| `formatLocalIsoDate()` | Прочие экраны (например `/nihuyasi` create) — локальный TZ runtime |
+
+Подробнее: `docs/design-principles.md` → «Today — рабочая поверхность внимания».
+
 ## Middleware
 
 Protected prefixes:

@@ -292,9 +292,22 @@ Materials — **глобальные объекты пользователя**, 
 
 - Collection-list (Notion-database): type **icon** слева, **title** primary, **material_type** secondary.
 - Поиск по title (inline, без modal).
-- Фильтр по `material_type` — pills или select, hardcoded types.
+- Фильтр по `material_type` — pills или select, hardcoded types (см. список ниже).
 - Кнопка «+ Новый материал» — `.notion-new-button`.
 - Без CRM-таблицы и boxed-карточек.
+
+**Допустимые `material_type`** (константа `lib/materialTypes.ts`, не enum в БД):
+
+| value | UI label | icon |
+|-------|----------|------|
+| link | Ссылка | 🔗 |
+| youtube | YouTube | ▶️ |
+| file | Файл | 📄 |
+| note | Заметка | 📝 |
+| image | Изображение | 🖼 |
+| other | Другое | 📦 |
+
+Иконка и label — через `getMaterialTypeIcon()` / `getMaterialTypeLabel()`; select — `MaterialTypeSelect`.
 
 
 
@@ -470,6 +483,7 @@ CSS: `.page-title`, `textarea.page-title-field`, `h1.page-title-static` — од
 - AppShell + единый sidebar с остальными экранами.
 
 - **Дата — часть заголовка страницы** (`Сегодня` + dateline под ним), не sticky-баннер и не отдельная плашка.
+- **Часовой пояс Today — всегда Europe/Moscow** (`lib/format.ts`: `TODAY_TIMEZONE`, `formatMoscowIsoDate()`, `formatTodayHeading()`). Dateline и блок Nihuyasi на Today используют московскую календарную дату, независимо от TZ устройства или сервера.
 
 - Плоский список actions с `today = true`; **без группировки по документам** и без горизонтальных разделителей между блоками.
 
