@@ -77,7 +77,9 @@ export default async function NewMaterialPage() {
 
               <div className="notion-property">
                 <label htmlFor="title" className="notion-property-label">
-                  Название
+                  <span className="notion-property-label-primary">
+                    Название материала
+                  </span>
                 </label>
                 <div className="notion-property-value">
                   <input
@@ -108,7 +110,7 @@ export default async function NewMaterialPage() {
                   htmlFor="file_url_or_path"
                   className="notion-property-label"
                 >
-                  URL / путь
+                  <span className="notion-property-label-primary">URL / путь</span>
                   <span className="notion-property-optional-tag">
                     необязательно
                   </span>
@@ -123,21 +125,20 @@ export default async function NewMaterialPage() {
                 </div>
               </div>
 
-              <div className="notion-property notion-property-optional notion-property-textarea">
-                <label htmlFor="notes" className="notion-property-label">
-                  Заметки
+              <div className="material-content-block">
+                <label htmlFor="notes" className="material-content-label">
+                  <span className="notion-property-label-primary">Содержимое</span>
                   <span className="notion-property-optional-tag">
                     необязательно
                   </span>
                 </label>
-                <div className="notion-property-value">
-                  <textarea
-                    id="notes"
-                    name="notes"
-                    rows={3}
-                    placeholder="Комментарий"
-                  />
-                </div>
+                <textarea
+                  id="notes"
+                  name="notes"
+                  className="material-content-field"
+                  rows={6}
+                  placeholder="Markdown: текст, списки, ссылки…"
+                />
               </div>
 
               <div className="page-form-footer">

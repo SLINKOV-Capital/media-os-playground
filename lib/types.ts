@@ -38,6 +38,7 @@ export type Material = {
   material_type: string;
   file_url_or_path: string | null;
   notes: string | null;
+  preview_url: string | null;
   created_at: string;
   updated_at: string;
 };

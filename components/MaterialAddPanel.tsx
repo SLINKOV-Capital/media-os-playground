@@ -37,6 +37,7 @@ export function MaterialAddPanel({
   const [isSearching, startSearchTransition] = useTransition();
   const [isLinking, startLinkTransition] = useTransition();
   const titleRef = useRef<HTMLTextAreaElement>(null);
+  const contentRef = useRef<HTMLTextAreaElement>(null);
 
   const linkedMaterialSet = useMemo(
     () => new Set(linkedMaterialIds),
@@ -82,6 +83,17 @@ export function MaterialAddPanel({
     element.style.height = `${element.scrollHeight}px`;
   }
 
+  function resizeContentField() {
+    const element = contentRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  }
+
   useEffect(() => {
     if (open) {
       resizeTitleField();
@@ -108,6 +120,12 @@ export function MaterialAddPanel({
 
   const showCreateForm = title.trim().length > 0 && !exactMatch;
 
+  useEffect(() => {
+    if (open && showCreateForm) {
+      resizeContentField();
+    }
+  }, [open, showCreateForm]);
+
   if (!open) {
     return (
       <button
@@ -127,7 +145,7 @@ export function MaterialAddPanel({
           htmlFor={`material-search-${documentId}`}
           className="notion-property-label"
         >
-          Название
+          <span className="notion-property-label-primary">Название материала</span>
         </label>
         <div className="notion-property-value">
           <textarea
@@ -243,7 +261,7 @@ export function MaterialAddPanel({
               htmlFor={`material-url-${documentId}`}
               className="notion-property-label"
             >
-              URL / путь
+              <span className="notion-property-label-primary">URL / путь</span>
               <span className="notion-property-optional-tag">необязательно</span>
             </label>
             <div className="notion-property-value">
@@ -256,20 +274,23 @@ export function MaterialAddPanel({
             </div>
           </div>
 
-          <div className="notion-property notion-property-optional notion-property-textarea">
+          <div className="notion-property notion-property-optional notion-property-textarea material-content-block">
             <label
-              htmlFor={`material-notes-${documentId}`}
+              htmlFor={`material-content-${documentId}`}
               className="notion-property-label"
             >
-              Заметки
+              <span className="notion-property-label-primary">Содержимое</span>
               <span className="notion-property-optional-tag">необязательно</span>
             </label>
             <div className="notion-property-value">
               <textarea
-                id={`material-notes-${documentId}`}
+                ref={contentRef}
+                id={`material-content-${documentId}`}
                 name="notes"
-                rows={2}
-                placeholder="Комментарий"
+                className="material-content-field"
+                rows={4}
+                placeholder="Markdown: текст, списки, ссылки…"
+                onInput={resizeContentField}
               />
             </div>
           </div>

@@ -1,4 +1,9 @@
+"use client";
+
 import { deleteWorkflowTemplate } from "@/app/templates/actions";
+import { formatActionError } from "@/lib/actionResult";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 type DeleteWorkflowTemplateButtonProps = {
   id: string;
@@ -7,12 +12,42 @@ type DeleteWorkflowTemplateButtonProps = {
 export function DeleteWorkflowTemplateButton({
   id,
 }: DeleteWorkflowTemplateButtonProps) {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function handleDelete() {
+    if (!window.confirm("Удалить шаблон?")) {
+      return;
+    }
+
+    setError(null);
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.set("id", id);
+      const result = await deleteWorkflowTemplate(formData);
+
+      if (!result.ok) {
+        setError(formatActionError(result));
+        return;
+      }
+
+      router.refresh();
+    });
+  }
+
   return (
-    <form action={deleteWorkflowTemplate} className="inline-form">
-      <input type="hidden" name="id" value={id} />
-      <button type="submit" className="collection-delete-button">
-        Удалить
+    <div className="template-delete-wrap">
+      <button
+        type="button"
+        className="collection-delete-button"
+        disabled={isPending}
+        onClick={handleDelete}
+      >
+        {isPending ? "…" : "Удалить"}
       </button>
-    </form>
+      {error && <p className="template-delete-error">{error}</p>}
+    </div>
   );
 }

@@ -1,8 +1,10 @@
 import { generateActions, updateDocumentTitle } from "@/app/documents/actions";
 import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
+import { DocumentTypeSelect } from "@/components/DocumentTypeSelect";
 import { PageTitle } from "@/components/PageTitle";
 import { AppShell } from "@/components/AppShell";
+import { listTemplateDocumentTypes } from "@/lib/document-types";
 import { createClient } from "@/lib/supabase/server";
 import { mapActionsMaterials } from "@/lib/mapActionMaterials";
 import { mapDocumentMaterialsFromRows } from "@/lib/mapDocumentMaterials";
@@ -50,8 +52,11 @@ export default async function DocumentPage({
 
   const document = documentData as Document;
 
-  const [{ data: actionsData }, { data: documentMaterialsData }] =
-    await Promise.all([
+  const [
+    { data: actionsData },
+    { data: documentMaterialsData },
+    { data: templatesData },
+  ] = await Promise.all([
       supabase
         .from("actions")
         .select("*, action_materials(material_id, materials(id, title))")
@@ -63,10 +68,16 @@ export default async function DocumentPage({
         .select("material_id, materials(*)")
         .eq("document_id", id)
         .eq("user_id", user.id),
+      supabase
+        .from("workflow_templates_v2")
+        .select("document_type")
+        .eq("user_id", user.id)
+        .order("document_type", { ascending: true }),
     ]);
 
   const actions = mapActionsMaterials(actionsData ?? []);
   const materials = mapDocumentMaterialsFromRows(documentMaterialsData ?? []);
+  const templateTypes = listTemplateDocumentTypes(templatesData ?? []);
 
   let template: WorkflowTemplateV2 | null = null;
 
@@ -100,7 +111,11 @@ export default async function DocumentPage({
         <div className="doc-page-stack">
           <header className="page-header">
             <PageTitle value={document.title} onSave={saveDocumentTitle} />
-            <p className="doc-page-type">{document.document_type}</p>
+            <DocumentTypeSelect
+              documentId={document.id}
+              value={document.document_type}
+              templateTypes={templateTypes}
+            />
           </header>
 
           {actions.length === 0 && template && (

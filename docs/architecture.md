@@ -88,6 +88,12 @@
 **workflow_templates_v2**
 - `document_type`, `action_titles[]`
 - unique: `(user_id, document_type)`
+- **Справочник типов документов:** `documents.document_type` должен соответствовать `document_type` одного из шаблонов пользователя (по смыслу, text FK без constraint).
+- Переименование типа в шаблоне — RPC `rename_document_type` (миграция `012`): атомарно обновляет шаблон и все documents со старым типом.
+- Удаление шаблона запрещено, если есть documents с этим `document_type`.
+- Смена типа у существующего document — server action `updateDocumentType`; actions/materials не затрагиваются.
+
+Подробнее: `docs/terminology.md` → Workflow Template.
 
 **nihuyasi** *(новая)*
 - `user_id`, `date`, `text`, timestamps
@@ -154,6 +160,20 @@ Protected prefixes:
 | 007 | `007_action_materials.sql` | action_materials junction |
 | **008** | `008_global_materials.sql` *(план)* | document_materials, migrate, drop document_id, unique titles |
 | **009** | `009_nihuyasi.sql` *(план)* | nihuyasi table + RLS |
+| 010 | `010_action_materials_rls_document_materials.sql` | RLS fix |
+| 011 | `011_material_preview_url.sql` | preview_url + Storage |
+| 012 | `012_rename_document_type.sql` | RPC `rename_document_type` |
+
+## PWA / Home Screen
+
+| Артефакт | Назначение |
+|----------|------------|
+| `public/app-icon-source.png` | Исходник иконки (положить вручную) |
+| `npm run icons` | Генерация `apple-touch-icon.png`, `icon-192/512`, `favicon.png` |
+| `public/manifest.json` | Web App Manifest (`start_url: /today`, `display: standalone`) |
+| `app/layout.tsx` | `metadata`, `appleWebApp`, `themeColor`, icons |
+
+Push notifications — не входят в scope.
 
 ## Legacy
 

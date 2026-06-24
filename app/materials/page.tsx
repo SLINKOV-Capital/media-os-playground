@@ -1,10 +1,11 @@
 import { AppShell } from "@/components/AppShell";
+import { MaterialImagePreview } from "@/components/MaterialImagePreview";
 import { createClient } from "@/lib/supabase/server";
 import {
   getMaterialTypeIcon,
-  getMaterialTypeLabel,
   MATERIAL_TYPES,
 } from "@/lib/materialTypes";
+import { getMaterialPreviewSrc } from "@/lib/materialPreview";
 import type { Material } from "@/lib/types";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -128,29 +129,37 @@ export default async function MaterialsPage({
               aria-hidden="true"
             >
               <span>Название</span>
-              <span>Тип</span>
             </div>
-            {materials.map((material) => (
+            {materials.map((material) => {
+              const previewSrc = getMaterialPreviewSrc(material);
+
+              return (
               <Link
                 key={material.id}
                 href={`/materials/${material.id}`}
-                className="collection-row collection-row-materials"
+                className={`collection-row collection-row-materials${
+                  previewSrc ? " has-image-preview" : ""
+                }`}
               >
                 <span className="collection-primary collection-primary-material">
-                  <span className="material-type-icon" aria-hidden="true">
-                    {getMaterialTypeIcon(material.material_type)}
+                  <span className="collection-material-leading">
+                    {previewSrc ? (
+                      <MaterialImagePreview
+                        src={previewSrc}
+                        alt={material.title}
+                        variant="list"
+                      />
+                    ) : (
+                      <span className="material-type-icon" aria-hidden="true">
+                        {getMaterialTypeIcon(material.material_type)}
+                      </span>
+                    )}
                   </span>
                   {material.title}
                 </span>
-                <span
-                  className="collection-meta collection-meta-icon-only"
-                  aria-label={getMaterialTypeLabel(material.material_type)}
-                  title={getMaterialTypeLabel(material.material_type)}
-                >
-                  {getMaterialTypeIcon(material.material_type)}
-                </span>
               </Link>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

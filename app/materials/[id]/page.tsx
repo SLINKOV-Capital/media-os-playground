@@ -8,19 +8,12 @@ import { MaterialPropertiesEditor } from "@/components/MaterialPropertiesEditor"
 import { createClient } from "@/lib/supabase/server";
 import { mapDocumentLinksFromRows } from "@/lib/mapDocumentMaterials";
 import { getMaterialTypeIcon } from "@/lib/materialTypes";
-import type { Action, Document, Material } from "@/lib/types";
+import type { Document, Material } from "@/lib/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 type MaterialPageProps = {
   params: Promise<{ id: string }>;
-};
-
-type LinkedAction = Pick<
-  Action,
-  "id" | "title" | "done" | "document_id" | "sort_order"
-> & {
-  documentTitle: string;
 };
 
 export default async function MaterialPage({ params }: MaterialPageProps) {
@@ -38,7 +31,6 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
   const [
     { data: materialData, error: materialError },
     { data: documentLinksData, error: documentLinksError },
-    { data: linkedActionsData, error: actionsError },
     { data: allDocumentsData, error: allDocumentsError },
   ] = await Promise.all([
     supabase
@@ -50,13 +42,6 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
     supabase
       .from("document_materials")
       .select("document_id, documents(id, title)")
-      .eq("material_id", id)
-      .eq("user_id", user.id),
-    supabase
-      .from("action_materials")
-      .select(
-        "actions(id, title, done, document_id, sort_order, documents(title))"
-      )
       .eq("material_id", id)
       .eq("user_id", user.id),
     supabase
@@ -79,10 +64,6 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
     console.error("Failed to fetch linked documents:", documentLinksError.message);
   }
 
-  if (actionsError) {
-    console.error("Failed to fetch linked actions:", actionsError.message);
-  }
-
   if (allDocumentsError) {
     console.error("Failed to fetch documents:", allDocumentsError.message);
   }
@@ -94,38 +75,6 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
   const availableDocuments = allDocuments.filter(
     (document) => !linkedDocumentIds.has(document.id)
   );
-
-  const linkedActions = (linkedActionsData ?? [])
-    .map((row) => {
-      const actions = row.actions as
-        | (LinkedAction & {
-            documents: { title: string } | { title: string }[] | null;
-          })
-        | (LinkedAction & {
-            documents: { title: string } | { title: string }[] | null;
-          })[]
-        | null;
-
-      const action = Array.isArray(actions) ? actions[0] : actions;
-
-      if (!action) {
-        return null;
-      }
-
-      const documents = action.documents;
-      const document = Array.isArray(documents) ? documents[0] : documents;
-
-      return {
-        id: action.id,
-        title: action.title,
-        done: action.done,
-        document_id: action.document_id,
-        sort_order: action.sort_order,
-        documentTitle: document?.title ?? "Без названия",
-      } satisfies LinkedAction;
-    })
-    .filter((action): action is LinkedAction => Boolean(action))
-    .sort((a, b) => a.sort_order - b.sort_order);
 
   async function saveMaterialTitle(title: string) {
     "use server";
@@ -148,6 +97,8 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
             <PageTitle
               value={material.title}
               onSave={saveMaterialTitle}
+              ariaLabel="Название материала"
+              placeholder="Название материала"
               leading={
                 <span
                   className="material-type-icon material-type-icon-large page-title-leading"
@@ -160,7 +111,7 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
           </header>
 
           <MaterialPropertiesEditor
-            key={`${material.material_type}|${material.file_url_or_path ?? ""}|${material.notes ?? ""}`}
+            key={`${material.material_type}|${material.file_url_or_path ?? ""}|${material.preview_url ?? ""}|${material.notes ?? ""}`}
             material={material}
           />
 
@@ -169,39 +120,6 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
             linkedDocuments={linkedDocuments}
             availableDocuments={availableDocuments}
           />
-
-          <section className="doc-section">
-            <div className="section-header">
-              <h2 className="section-label">Связанные действия</h2>
-            </div>
-
-            {linkedActions.length === 0 ? (
-              <p className="section-empty">
-                Нет действий, привязанных к этому материалу
-              </p>
-            ) : (
-              <ul className="material-actions-list">
-                {linkedActions.map((action) => (
-                  <li
-                    key={action.id}
-                    className={`material-action-item${
-                      action.done ? " is-done" : ""
-                    }`}
-                  >
-                    <Link
-                      href={`/documents/${action.document_id}`}
-                      className="material-action-link"
-                    >
-                      <span className="material-action-title">{action.title}</span>
-                      <span className="material-action-document">
-                        Документ: {action.documentTitle}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
         </div>
       </div>
     </AppShell>

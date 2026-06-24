@@ -2,6 +2,7 @@
 
 import type { ActionResult } from "@/lib/actionResult";
 import { isValidMaterialType } from "@/lib/materialTypes";
+import { getMaterialPreviewPublicUrl } from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -160,6 +161,56 @@ export async function updateDocumentTitle(
   return { ok: true };
 }
 
+export async function updateDocumentType(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const id = String(formData.get("id") ?? "");
+  const document_type = String(formData.get("document_type") ?? "").trim();
+
+  if (!id) {
+    return { ok: false, error: "not_found" };
+  }
+
+  if (!document_type) {
+    return { ok: false, error: "empty" };
+  }
+
+  const { data: template, error: templateError } = await supabase
+    .from("workflow_templates_v2")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("document_type", document_type)
+    .maybeSingle();
+
+  if (templateError || !template) {
+    return { ok: false, error: "invalid_type" };
+  }
+
+  const { error } = await supabase
+    .from("documents")
+    .update({ document_type })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to update document type:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  revalidateDocument(id);
+  revalidatePath("/documents");
+  return { ok: true };
+}
+
 export async function updateMaterialTitle(
   formData: FormData
 ): Promise<ActionResult> {
@@ -278,6 +329,66 @@ export async function updateMaterial(
   return { ok: true };
 }
 
+export async function setMaterialPreviewUrl(
+  materialId: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  if (!materialId) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { data: material, error: materialError } = await supabase
+    .from("materials")
+    .select("id, material_type")
+    .eq("id", materialId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (materialError || !material) {
+    console.error("Failed to fetch material for preview:", materialError?.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  if (material.material_type !== "image") {
+    return { ok: false, error: "invalid_type" };
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!supabaseUrl) {
+    console.error("Missing NEXT_PUBLIC_SUPABASE_URL");
+    return { ok: false, error: "not_found" };
+  }
+
+  const preview_url = getMaterialPreviewPublicUrl(
+    supabaseUrl,
+    user.id,
+    materialId
+  );
+
+  const { error } = await supabase
+    .from("materials")
+    .update({ preview_url })
+    .eq("id", materialId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to save material preview_url:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  revalidateMaterial(materialId);
+  return { ok: true };
+}
+
 export async function createDocument(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const {
@@ -292,6 +403,18 @@ export async function createDocument(formData: FormData): Promise<void> {
   const document_type = String(formData.get("document_type") ?? "").trim();
 
   if (!title || !document_type) {
+    return;
+  }
+
+  const { data: template, error: templateError } = await supabase
+    .from("workflow_templates_v2")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("document_type", document_type)
+    .maybeSingle();
+
+  if (templateError || !template) {
+    console.error("Invalid document type for create:", document_type);
     return;
   }
 

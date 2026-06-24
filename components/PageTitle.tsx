@@ -18,6 +18,7 @@ type PageTitleProps = {
   onSave?: (value: string) => Promise<ActionResult>;
   onDraftChange?: (value: string) => void;
   placeholder?: string;
+  ariaLabel?: string;
   leading?: ReactNode;
 };
 
@@ -30,6 +31,7 @@ export function PageTitle({
   onSave,
   onDraftChange,
   placeholder = "Без названия",
+  ariaLabel = "Заголовок страницы",
   leading,
 }: PageTitleProps) {
   const router = useRouter();
@@ -130,7 +132,7 @@ export function PageTitle({
       onKeyDown={handleKeyDown}
       placeholder={placeholder}
       disabled={isPending}
-      aria-label="Заголовок страницы"
+      aria-label={ariaLabel}
       aria-invalid={error ? true : undefined}
     />
   );

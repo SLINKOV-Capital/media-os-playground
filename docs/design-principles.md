@@ -328,10 +328,11 @@ Materials — **глобальные объекты пользователя**, 
 
 
 - Title — крупный заголовок страницы, inline edit.
-- Properties: type pill, URL, notes.
+- Properties: type, URL / путь, image preview (v1 для `image`), **Содержимое** (Markdown textarea, full width, auto-height).
+- UI label **Содержимое** = DB column `notes` (plain Markdown).
 - Секция **Документы** — flat list ссылок (не «родитель», а все documents).
-- Секция **Действия** — flat list linked actions.
-- Без файлового менеджера; URL — accent link.
+- Без секции «Связанные действия» на карточке material (материал = атом информации).
+- Без файлового менеджера; URL — текстовое поле, image preview только по прямому URL.
 
 
 
@@ -340,8 +341,17 @@ Materials — **глобальные объекты пользователя**, 
 
 
 - Секция «Материалы» — materials, привязанные к document через `document_materials`.
+- Для `image` + URL — миниатюра слева в строке списка.
 - Кнопка **«Добавить материал»** → search + create/link panel.
 - В action checklist доступны только materials **этого document**.
+
+
+
+### Material content editor (roadmap)
+
+- **v1** — Markdown textarea «Содержимое»
+- **v1.1** — preview tab
+- **v2** — WYSIWYG (TipTap / Lexical)
 
 
 
@@ -513,7 +523,23 @@ CSS: `.page-title`, `textarea.page-title-field`, `h1.page-title-static` — од
 
 - Collection-list: **тип документа** — primary, **количество действий** — secondary.
 
-- «Удалить» — при hover строки, muted.
+- «Удалить» — при hover строки, muted. Если тип используется documents — ошибка с числом документов.
+
+- Inline rename типа (`PageTitle`) — каскадно обновляет documents через RPC.
+
+
+
+## Тип документа — консистентность
+
+
+
+| Правило | Поведение |
+|---------|-----------|
+| Создание document | Select только из `workflow_templates_v2` |
+| Удаление template | Запрещено при documents с этим типом |
+| Переименование template | Каскад на все documents + duplicate check |
+| Карточка document | Select смены типа (`DocumentTypeSelect`) |
+| Orphan type | Document со старым типом без шаблона — показать hint, выбрать новый |
 
 
 

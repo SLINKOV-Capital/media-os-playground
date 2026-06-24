@@ -4,10 +4,13 @@ export type ActionResult =
       ok: false;
       error:
         | "duplicate_title"
+        | "duplicate_type"
         | "empty"
         | "last_document"
         | "invalid_type"
-        | "not_found";
+        | "not_found"
+        | "type_in_use";
+      count?: number;
     };
 
 export const ACTION_ERROR_MESSAGES: Record<
@@ -15,8 +18,21 @@ export const ACTION_ERROR_MESSAGES: Record<
   string
 > = {
   duplicate_title: "Такое название уже существует",
+  duplicate_type: "Такой тип документа уже существует",
   empty: "Название не может быть пустым",
   last_document: "Нельзя оставить материал без документов",
-  invalid_type: "Недопустимый тип материала",
+  invalid_type: "Выберите тип из существующих шаблонов",
   not_found: "Не найдено",
+  type_in_use:
+    "Нельзя удалить тип: он используется в документах. Сначала измените тип этих документов.",
 };
+
+export function formatActionError(
+  result: Extract<ActionResult, { ok: false }>
+): string {
+  if (result.error === "type_in_use" && result.count != null) {
+    return `Нельзя удалить тип: он используется в ${result.count} документах. Сначала измените тип этих документов.`;
+  }
+
+  return ACTION_ERROR_MESSAGES[result.error];
+}
