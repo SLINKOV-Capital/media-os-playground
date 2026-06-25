@@ -1,20 +1,31 @@
 "use server";
 
 import type { ActionResult } from "@/lib/actionResult";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { isValidMaterialType } from "@/lib/materialTypes";
+import { slugifyTitle, withSlugSuffix } from "@/lib/slugify";
 import { getMaterialPreviewPublicUrl } from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-function revalidateActionContexts(documentId: string) {
+function revalidateSitePaths(slug?: string | null) {
+  revalidatePath("/");
+
+  if (slug) {
+    revalidatePath(`/p/${slug}`);
+  }
+}
+
+function revalidateActionContexts(documentId: string, slug?: string | null) {
   revalidatePath("/documents");
   revalidatePath(`/documents/${documentId}`);
   revalidatePath("/today");
+  revalidateSitePaths(slug);
 }
 
-function revalidateDocument(documentId: string) {
-  revalidateActionContexts(documentId);
+function revalidateDocument(documentId: string, slug?: string | null) {
+  revalidateActionContexts(documentId, slug);
 }
 
 function revalidateMaterial(materialId: string, documentId?: string) {
@@ -24,6 +35,35 @@ function revalidateMaterial(materialId: string, documentId?: string) {
   if (documentId) {
     revalidateDocument(documentId);
   }
+}
+
+async function revalidateMaterialPublicSites(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  materialId: string,
+  documentId?: string
+) {
+  revalidateMaterial(materialId, documentId);
+
+  const { data, error } = await supabase
+    .from("document_materials")
+    .select("document_id")
+    .eq("material_id", materialId);
+
+  if (error) {
+    return;
+  }
+
+  const documentIds = new Set(
+    (data ?? []).map((row) => row.document_id).filter(Boolean)
+  );
+
+  if (documentId) {
+    documentIds.add(documentId);
+  }
+
+  await Promise.all(
+    [...documentIds].map((id) => revalidateDocumentSite(supabase, id))
+  );
 }
 
 async function linkDocumentMaterialRecord(
@@ -77,6 +117,100 @@ async function findExistingMaterialByTitle(
   );
 }
 
+async function findPublishedSlugConflict(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  slug: string,
+  excludeId?: string
+) {
+  const { data, error } = await supabase
+    .from("documents")
+    .select("id")
+    .eq("site_status", "published")
+    .eq("site_slug", slug);
+
+  if (error) {
+    console.error("Failed to check slug conflict:", error.message);
+    return true;
+  }
+
+  return (data ?? []).some((row) => row.id !== excludeId);
+}
+
+async function allocateDocumentSlug(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  title: string,
+  documentId: string,
+  existingSlug?: string | null
+) {
+  if (existingSlug?.trim()) {
+    return existingSlug.trim();
+  }
+
+  const base = slugifyTitle(title);
+
+  for (let suffix = 1; suffix <= 100; suffix += 1) {
+    const candidate = withSlugSuffix(base, suffix);
+    const conflict = await findPublishedSlugConflict(
+      supabase,
+      candidate,
+      documentId
+    );
+
+    if (!conflict) {
+      return candidate;
+    }
+  }
+
+  return `${base}-${documentId.slice(0, 8)}`;
+}
+
+async function getOwnedDocument(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  documentId: string
+) {
+  const { data, error } = await supabase
+    .from("documents")
+    .select(
+      "id, title, site_status, site_slug, site_published_at, site_featured"
+    )
+    .eq("id", documentId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to fetch document:", error.message);
+    return null;
+  }
+
+  return data;
+}
+
+async function getDocumentSiteSlug(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  documentId: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("documents")
+    .select("site_slug, site_status")
+    .eq("id", documentId)
+    .maybeSingle();
+
+  if (error || !data || data.site_status !== "published" || !data.site_slug) {
+    return null;
+  }
+
+  return data.site_slug;
+}
+
+async function revalidateDocumentSite(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  documentId: string
+) {
+  const slug = await getDocumentSiteSlug(supabase, documentId);
+  revalidateDocument(documentId, slug);
+}
+
 async function findExistingDocumentByTitle(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
@@ -117,7 +251,7 @@ export async function updateDocumentTitle(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -142,6 +276,8 @@ export async function updateDocumentTitle(
     return { ok: false, error: "duplicate_title" };
   }
 
+  const siteSlug = await getDocumentSiteSlug(supabase, id);
+
   const { error } = await supabase
     .from("documents")
     .update({ title })
@@ -157,7 +293,214 @@ export async function updateDocumentTitle(
     return { ok: false, error: "not_found" };
   }
 
-  revalidateDocument(id);
+  revalidateDocument(id, siteSlug);
+  return { ok: true };
+}
+
+export async function updateDocumentContentMd(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(COCKPIT_LOGIN_PATH);
+  }
+
+  const id = String(formData.get("id") ?? "");
+  const content_md = String(formData.get("content_md") ?? "");
+
+  if (!id) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { error } = await supabase
+    .from("documents")
+    .update({ content_md })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to update document content:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  await revalidateDocumentSite(supabase, id);
+  return { ok: true };
+}
+
+export async function updateDocumentPreview(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(COCKPIT_LOGIN_PATH);
+  }
+
+  const id = String(formData.get("id") ?? "");
+  const preview = String(formData.get("preview") ?? "").trim();
+
+  if (!id) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { error } = await supabase
+    .from("documents")
+    .update({ preview: preview || null })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to update document preview:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  await revalidateDocumentSite(supabase, id);
+  return { ok: true };
+}
+
+export async function publishDocument(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(COCKPIT_LOGIN_PATH);
+  }
+
+  const id = String(formData.get("id") ?? "");
+
+  if (!id) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const document = await getOwnedDocument(supabase, user.id, id);
+
+  if (!document) {
+    return { ok: false, error: "not_found" };
+  }
+
+  if (document.site_status === "published") {
+    return { ok: true };
+  }
+
+  const site_slug = await allocateDocumentSlug(
+    supabase,
+    document.title,
+    id,
+    document.site_slug
+  );
+
+  const publishedAt = document.site_published_at ?? new Date().toISOString();
+
+  const { error } = await supabase
+    .from("documents")
+    .update({
+      site_status: "published",
+      site_slug,
+      site_published_at: publishedAt,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false, error: "duplicate_title" };
+    }
+
+    console.error("Failed to publish document:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  revalidateDocument(id, site_slug);
+  return { ok: true };
+}
+
+export async function unpublishDocument(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(COCKPIT_LOGIN_PATH);
+  }
+
+  const id = String(formData.get("id") ?? "");
+
+  if (!id) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const document = await getOwnedDocument(supabase, user.id, id);
+
+  if (!document) {
+    return { ok: false, error: "not_found" };
+  }
+
+  if (document.site_status !== "published") {
+    return { ok: true };
+  }
+
+  const previousSlug = document.site_slug;
+
+  const { error } = await supabase
+    .from("documents")
+    .update({ site_status: "draft" })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to unpublish document:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  revalidateDocument(id, previousSlug);
+  return { ok: true };
+}
+
+export async function toggleDocumentFeatured(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(COCKPIT_LOGIN_PATH);
+  }
+
+  const id = String(formData.get("id") ?? "");
+  const featured = formData.get("site_featured") === "true";
+
+  if (!id) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { error } = await supabase
+    .from("documents")
+    .update({ site_featured: featured })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to toggle document featured:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  await revalidateDocumentSite(supabase, id);
   return { ok: true };
 }
 
@@ -170,7 +513,7 @@ export async function updateDocumentType(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -182,6 +525,16 @@ export async function updateDocumentType(
 
   if (!document_type) {
     return { ok: false, error: "empty" };
+  }
+
+  const document = await getOwnedDocument(supabase, user.id, id);
+
+  if (!document) {
+    return { ok: false, error: "not_found" };
+  }
+
+  if (document.site_published_at) {
+    return { ok: false, error: "published_locked" };
   }
 
   const { data: template, error: templateError } = await supabase
@@ -206,7 +559,7 @@ export async function updateDocumentType(
     return { ok: false, error: "not_found" };
   }
 
-  revalidateDocument(id);
+  await revalidateDocumentSite(supabase, id);
   revalidatePath("/documents");
   return { ok: true };
 }
@@ -220,7 +573,7 @@ export async function updateMaterialTitle(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -273,7 +626,7 @@ export async function updateMaterial(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -325,7 +678,7 @@ export async function updateMaterial(
     return { ok: false, error: "not_found" };
   }
 
-  revalidateMaterial(id);
+  await revalidateMaterialPublicSites(supabase, id);
   return { ok: true };
 }
 
@@ -338,7 +691,7 @@ export async function setMaterialPreviewUrl(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   if (!materialId) {
@@ -385,7 +738,7 @@ export async function setMaterialPreviewUrl(
     return { ok: false, error: "not_found" };
   }
 
-  revalidateMaterial(materialId);
+  await revalidateMaterialPublicSites(supabase, materialId);
   return { ok: true };
 }
 
@@ -396,7 +749,7 @@ export async function createDocument(formData: FormData): Promise<void> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const title = String(formData.get("title") ?? "").trim();
@@ -444,7 +797,7 @@ export async function generateActions(formData: FormData): Promise<void> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const documentId = String(formData.get("document_id") ?? "");
@@ -522,7 +875,7 @@ export async function createAction(formData: FormData): Promise<void> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const documentId = String(formData.get("document_id") ?? "");
@@ -573,7 +926,7 @@ export async function updateAction(formData: FormData): Promise<void> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -608,7 +961,7 @@ export async function linkActionMaterial(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const actionId = String(formData.get("action_id") ?? "");
@@ -692,7 +1045,7 @@ export async function unlinkActionMaterial(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const actionId = String(formData.get("action_id") ?? "");
@@ -726,7 +1079,7 @@ export async function deleteAction(formData: FormData): Promise<void> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -758,7 +1111,7 @@ export async function toggleActionDone(formData: FormData): Promise<void> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -791,7 +1144,7 @@ export async function toggleActionToday(formData: FormData): Promise<void> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -853,7 +1206,7 @@ export async function reorderActions(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   if (!documentId || orderedIds.length === 0) {
@@ -925,7 +1278,7 @@ export async function reorderTodayActions(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   if (orderedIds.length === 0) {
@@ -983,7 +1336,7 @@ export async function linkMaterialToDocument(formData: FormData): Promise<void> 
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const documentId = String(formData.get("document_id") ?? "");
@@ -1030,7 +1383,7 @@ export async function linkMaterialToDocument(formData: FormData): Promise<void> 
     return;
   }
 
-  revalidateMaterial(materialId, documentId);
+  await revalidateMaterialPublicSites(supabase, materialId, documentId);
 }
 
 export async function findMaterialByTitle(title: string) {
@@ -1040,7 +1393,7 @@ export async function findMaterialByTitle(title: string) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   return findExistingMaterialByTitle(supabase, user.id, title);
@@ -1055,7 +1408,7 @@ export async function unlinkMaterialFromDocument(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const documentId = String(formData.get("document_id") ?? "");
@@ -1092,7 +1445,7 @@ export async function unlinkMaterialFromDocument(
     return { ok: false, error: "not_found" };
   }
 
-  revalidateMaterial(materialId, documentId);
+  await revalidateMaterialPublicSites(supabase, materialId, documentId);
   return { ok: true };
 }
 
@@ -1103,7 +1456,7 @@ export async function searchMaterials(query: string) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const trimmed = query.trim();
@@ -1135,7 +1488,7 @@ export async function createMaterial(formData: FormData): Promise<void> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const documentId = String(formData.get("document_id") ?? "");
@@ -1183,7 +1536,11 @@ export async function createMaterial(formData: FormData): Promise<void> {
       return;
     }
 
-    revalidateMaterial(existingMaterial.id, documentId);
+    await revalidateMaterialPublicSites(
+      supabase,
+      existingMaterial.id,
+      documentId
+    );
 
     if (redirectTarget === "materials") {
       redirect(`/materials/${existingMaterial.id}`);
@@ -1216,7 +1573,7 @@ export async function createMaterial(formData: FormData): Promise<void> {
           duplicate.id,
           user.id
         );
-        revalidateMaterial(duplicate.id, documentId);
+        await revalidateMaterialPublicSites(supabase, duplicate.id, documentId);
 
         if (redirectTarget === "materials") {
           redirect(`/materials/${duplicate.id}`);
@@ -1241,7 +1598,7 @@ export async function createMaterial(formData: FormData): Promise<void> {
     return;
   }
 
-  revalidateMaterial(material.id, documentId);
+  await revalidateMaterialPublicSites(supabase, material.id, documentId);
 
   if (redirectTarget === "materials") {
     redirect(`/materials/${material.id}`);

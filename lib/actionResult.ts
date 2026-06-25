@@ -9,6 +9,7 @@ export type ActionResult =
         | "last_document"
         | "invalid_type"
         | "not_found"
+        | "published_locked"
         | "type_in_use";
       count?: number;
     };
@@ -23,6 +24,8 @@ export const ACTION_ERROR_MESSAGES: Record<
   last_document: "Нельзя оставить материал без документов",
   invalid_type: "Выберите тип из существующих шаблонов",
   not_found: "Не найдено",
+  published_locked:
+    "Нельзя изменить: документ уже публиковался на сайте",
   type_in_use:
     "Нельзя удалить тип: он используется в документах. Сначала измените тип этих документов.",
 };

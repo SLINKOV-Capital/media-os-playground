@@ -1,6 +1,7 @@
 "use server";
 
 import type { ActionResult } from "@/lib/actionResult";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -82,7 +83,7 @@ export async function updateTemplateTitle(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -118,7 +119,7 @@ export async function createWorkflowTemplate(formData: FormData): Promise<void> 
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const document_type = parseDocumentType(formData);
@@ -161,7 +162,7 @@ export async function updateWorkflowTemplate(formData: FormData): Promise<void> 
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");
@@ -225,7 +226,7 @@ export async function deleteWorkflowTemplate(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const id = String(formData.get("id") ?? "");

@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/format";
 import type { Document } from "@/lib/types";
@@ -12,7 +13,7 @@ export default async function DocumentsPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const { data, error } = await supabase

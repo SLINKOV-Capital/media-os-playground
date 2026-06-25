@@ -2,6 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { SortableTodayList } from "@/components/SortableTodayList";
 import { TodayNihuyasiSection } from "@/components/TodayNihuyasiSection";
 import type { FocusAction } from "@/components/TodayItem";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoscowIsoDate, formatTodayHeading } from "@/lib/format";
 import { mapActionMaterials } from "@/lib/mapActionMaterials";
@@ -15,7 +16,7 @@ export default async function TodayPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const todayIso = formatMoscowIsoDate();

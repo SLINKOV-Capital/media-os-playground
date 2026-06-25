@@ -20,14 +20,34 @@ export type Task = {
   projects?: Pick<Project, "name"> | null;
 };
 
+export type SiteStatus = "draft" | "published";
+
 export type Document = {
   id: string;
   user_id: string;
   title: string;
   document_type: string;
+  content_md: string | null;
+  preview: string | null;
+  site_status: SiteStatus;
+  site_slug: string | null;
+  site_published_at: string | null;
+  site_featured: boolean;
   created_at: string;
   updated_at: string;
 };
+
+export type PublicDocument = Pick<
+  Document,
+  | "id"
+  | "title"
+  | "document_type"
+  | "preview"
+  | "content_md"
+  | "site_slug"
+  | "site_published_at"
+  | "site_featured"
+>;
 
 export type Material = {
   id: string;

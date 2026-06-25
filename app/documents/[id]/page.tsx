@@ -1,10 +1,13 @@
 import { generateActions, updateDocumentTitle } from "@/app/documents/actions";
 import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
+import { DocumentSiteBlock } from "@/components/DocumentSiteBlock";
 import { DocumentTypeSelect } from "@/components/DocumentTypeSelect";
 import { PageTitle } from "@/components/PageTitle";
 import { AppShell } from "@/components/AppShell";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { listTemplateDocumentTypes } from "@/lib/document-types";
+import { isDocumentSiteLocked } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { mapActionsMaterials } from "@/lib/mapActionMaterials";
 import { mapDocumentMaterialsFromRows } from "@/lib/mapDocumentMaterials";
@@ -31,7 +34,7 @@ export default async function DocumentPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const { data: documentData, error: documentError } = await supabase
@@ -115,8 +118,11 @@ export default async function DocumentPage({
               documentId={document.id}
               value={document.document_type}
               templateTypes={templateTypes}
+              disabled={isDocumentSiteLocked(document)}
             />
           </header>
+
+          <DocumentSiteBlock document={document} />
 
           {actions.length === 0 && template && (
             <div className="workflow-callout">

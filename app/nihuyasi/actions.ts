@@ -1,5 +1,6 @@
 "use server";
 
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import type { NihuyasiEntry } from "@/lib/types";
 import { revalidatePath } from "next/cache";
@@ -20,7 +21,7 @@ export async function createNihuyasiEntry(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const trimmed = text.trim();
@@ -58,7 +59,7 @@ export async function updateNihuyasiText(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const trimmed = text.trim();
@@ -92,7 +93,7 @@ export async function updateNihuyasiDate(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   if (!id || !date) {
@@ -121,7 +122,7 @@ export async function deleteNihuyasiEntry(id: string): Promise<boolean> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   if (!id) {

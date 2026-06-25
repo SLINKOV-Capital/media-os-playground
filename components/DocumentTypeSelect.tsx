@@ -9,12 +9,14 @@ type DocumentTypeSelectProps = {
   documentId: string;
   value: string;
   templateTypes: string[];
+  disabled?: boolean;
 };
 
 export function DocumentTypeSelect({
   documentId,
   value,
   templateTypes,
+  disabled = false,
 }: DocumentTypeSelectProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +35,10 @@ export function DocumentTypeSelect({
   const isOrphanType = value.trim() && !templateTypes.includes(value.trim());
 
   function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    if (disabled) {
+      return;
+    }
+
     const nextType = event.target.value;
 
     if (nextType === value) {
@@ -66,7 +72,7 @@ export function DocumentTypeSelect({
         id={`doc-type-${documentId}`}
         className="doc-page-type-select"
         value={value}
-        disabled={isPending}
+        disabled={isPending || disabled}
         onChange={handleChange}
       >
         {options.map((type) => (
@@ -76,7 +82,12 @@ export function DocumentTypeSelect({
           </option>
         ))}
       </select>
-      {isOrphanType && (
+      {disabled && (
+        <p className="doc-page-type-hint">
+          Тип нельзя менять после публикации на сайте
+        </p>
+      )}
+      {isOrphanType && !disabled && (
         <p className="doc-page-type-hint">
           Тип не найден среди шаблонов — выберите актуальный
         </p>

@@ -2,6 +2,7 @@ import { createMaterial } from "@/app/documents/actions";
 import { AppShell } from "@/components/AppShell";
 import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
 import { PageTitle } from "@/components/PageTitle";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import type { Document } from "@/lib/types";
 import Link from "next/link";
@@ -14,7 +15,7 @@ export default async function NewMaterialPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const { data, error } = await supabase

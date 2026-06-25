@@ -1,6 +1,7 @@
 import { createDocument } from "@/app/documents/actions";
 import { AppShell } from "@/components/AppShell";
 import { listTemplateDocumentTypes } from "@/lib/document-types";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -12,7 +13,7 @@ export default async function NewDocumentPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const { data: templatesData, error } = await supabase

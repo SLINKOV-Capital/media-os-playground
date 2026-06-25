@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { NihuyasiPageContent } from "@/components/NihuyasiPageContent";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import type { NihuyasiEntry } from "@/lib/types";
 import { redirect } from "next/navigation";
@@ -11,7 +12,7 @@ export default async function NihuyasiPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const { data, error } = await supabase

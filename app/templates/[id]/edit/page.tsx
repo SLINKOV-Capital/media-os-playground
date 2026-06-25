@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { TemplateEditorShell } from "@/components/TemplateEditorShell";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import type { WorkflowTemplateV2 } from "@/lib/types";
 import Link from "next/link";
@@ -17,7 +18,7 @@ export default async function EditTemplatePage({ params }: EditTemplatePageProps
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const { data, error } = await supabase

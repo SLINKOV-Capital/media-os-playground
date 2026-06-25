@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/AppShell";
 import { MaterialImagePreview } from "@/components/MaterialImagePreview";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import {
   getMaterialTypeIcon,
@@ -25,7 +26,7 @@ export default async function MaterialsPage({
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   let query = supabase

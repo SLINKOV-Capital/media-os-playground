@@ -5,6 +5,7 @@ import { AppShell } from "@/components/AppShell";
 import { PageTitle } from "@/components/PageTitle";
 import { MaterialDocumentsSection } from "@/components/MaterialDocumentsSection";
 import { MaterialPropertiesEditor } from "@/components/MaterialPropertiesEditor";
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import { mapDocumentLinksFromRows } from "@/lib/mapDocumentMaterials";
 import { getMaterialTypeIcon } from "@/lib/materialTypes";
@@ -25,7 +26,7 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(COCKPIT_LOGIN_PATH);
   }
 
   const [

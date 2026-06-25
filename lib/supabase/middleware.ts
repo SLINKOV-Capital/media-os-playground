@@ -1,3 +1,4 @@
+import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -42,11 +43,11 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/documents") ||
     pathname.startsWith("/materials") ||
     pathname.startsWith("/nihuyasi");
-  const isLogin = pathname === "/login";
+  const isLogin = pathname === COCKPIT_LOGIN_PATH;
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    url.pathname = COCKPIT_LOGIN_PATH;
     return NextResponse.redirect(url);
   }
 
