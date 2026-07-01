@@ -80,4 +80,43 @@ export function sortNihuyasiEntries<T extends { date: string; created_at: string
   });
 }
 
+export type NihuyasiStripDay = {
+  date: string;
+  hasEntry: boolean;
+  isToday: boolean;
+  label: string;
+};
+
+/**
+ * Last `days` calendar days (oldest → newest, ending today in local TZ),
+ * flagged with whether a Nihuyasi entry exists for that date.
+ */
+export function buildNihuyasiStrip(
+  entries: { date: string }[],
+  days = 30
+): NihuyasiStripDay[] {
+  const filledDates = new Set(entries.map((entry) => entry.date));
+  const today = new Date();
+  const todayIso = formatLocalIsoDate(today);
+  const result: NihuyasiStripDay[] = [];
+
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const date = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() - offset
+    );
+    const iso = formatLocalIsoDate(date);
+
+    result.push({
+      date: iso,
+      hasEntry: filledDates.has(iso),
+      isToday: iso === todayIso,
+      label: formatNihuyasiDateHeader(iso),
+    });
+  }
+
+  return result;
+}
+
 

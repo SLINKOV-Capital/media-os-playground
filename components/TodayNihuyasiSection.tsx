@@ -1,6 +1,7 @@
 "use client";
 
 import { createNihuyasiEntry } from "@/app/nihuyasi/actions";
+import { LinkifiedText } from "@/components/LinkifiedText";
 import type { NihuyasiEntry } from "@/lib/types";
 import { useCallback, useRef, useState, useTransition } from "react";
 
@@ -67,7 +68,7 @@ export function TodayNihuyasiSection({
         <ul className="nihuyasi-today-list">
           {entries.map((entry) => (
             <li key={entry.id} className="nihuyasi-today-item">
-              {entry.text}
+              <LinkifiedText text={entry.text} />
             </li>
           ))}
         </ul>

@@ -3531,6 +3531,44 @@ select.form-field-control {
   max-width: 720px;
 }
 
+.nihuyasi-toolbar {
+  margin-bottom: 24px;
+}
+
+.nihuyasi-search-input {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.nihuyasi-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.nihuyasi-search-meta {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.linkified-url {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.linkified-url:hover {
+  opacity: 0.85;
+}
+
 .nihuyasi-today-section {
   margin-top: 40px;
 }
@@ -3600,7 +3638,7 @@ select.form-field-control {
   display: flex;
   flex-direction: column;
   gap: 32px;
-  margin-bottom: 40px;
+  margin-bottom: 0;
 }
 
 .nihuyasi-date-group {
@@ -3658,6 +3696,29 @@ select.form-field-control {
   outline: none;
 }
 
+.nihuyasi-entry-text-view {
+  display: block;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.45;
+  text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
+  cursor: text;
+}
+
+.nihuyasi-entry-text-view:hover {
+  color: var(--text);
+}
+
 .nihuyasi-entry-meta {
   display: flex;
   align-items: center;
@@ -3694,7 +3755,45 @@ select.form-field-control {
 }
 
 .nihuyasi-create-section {
+  margin: 0 0 32px;
+}
+
+.nihuyasi-strip {
+  margin: 0 0 24px;
+}
+
+.nihuyasi-strip-cells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.nihuyasi-strip-cell {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.nihuyasi-strip-cell.is-filled {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.nihuyasi-strip-cell.is-empty {
+  background: #fbe4e4;
+  border-color: #f3c6c6;
+}
+
+.nihuyasi-strip-cell.is-today {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--text-muted);
+}
+
+.nihuyasi-strip-meta {
   margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 .nihuyasi-create-form {
