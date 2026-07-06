@@ -2,7 +2,7 @@ import { AppShell } from "@/components/AppShell";
 import { NihuyasiPageContent } from "@/components/NihuyasiPageContent";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
-import type { NihuyasiEntry } from "@/lib/types";
+import { normalizeNihuyasiEntry } from "@/lib/nihuyasi";
 import { redirect } from "next/navigation";
 
 export default async function NihuyasiPage() {
@@ -26,7 +26,9 @@ export default async function NihuyasiPage() {
     console.error("Failed to fetch nihuyasi entries:", error.message);
   }
 
-  const entries = (data ?? []) as NihuyasiEntry[];
+  const entries = (data ?? []).map((row) =>
+    normalizeNihuyasiEntry(row as Record<string, unknown>)
+  );
 
   return (
     <AppShell>

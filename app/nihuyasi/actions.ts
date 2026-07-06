@@ -1,10 +1,12 @@
 "use server";
 
-import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
+import {
+  normalizeNihuyasiEntry,
+  type NihuyasiCreateResult,
+  type NihuyasiMutationResult,
+} from "@/lib/nihuyasi";
 import { createClient } from "@/lib/supabase/server";
-import type { NihuyasiEntry } from "@/lib/types";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 function revalidateNihuyasi() {
   revalidatePath("/today");
@@ -14,20 +16,20 @@ function revalidateNihuyasi() {
 export async function createNihuyasiEntry(
   text: string,
   date: string
-): Promise<NihuyasiEntry | null> {
+): Promise<NihuyasiCreateResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(COCKPIT_LOGIN_PATH);
+    return { ok: false, error: "auth" };
   }
 
   const trimmed = text.trim();
 
   if (!trimmed || !date) {
-    return null;
+    return { ok: false, error: "empty" };
   }
 
   const { data, error } = await supabase
@@ -42,30 +44,30 @@ export async function createNihuyasiEntry(
 
   if (error || !data) {
     console.error("Failed to create nihuyasi entry:", error?.message);
-    return null;
+    return { ok: false, error: "save_failed" };
   }
 
   revalidateNihuyasi();
-  return data as NihuyasiEntry;
+  return { ok: true, entry: normalizeNihuyasiEntry(data) };
 }
 
 export async function updateNihuyasiText(
   id: string,
   text: string
-): Promise<boolean> {
+): Promise<NihuyasiMutationResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(COCKPIT_LOGIN_PATH);
+    return { ok: false, error: "auth" };
   }
 
   const trimmed = text.trim();
 
   if (!id || !trimmed) {
-    return false;
+    return { ok: false, error: "empty" };
   }
 
   const { error } = await supabase
@@ -76,28 +78,28 @@ export async function updateNihuyasiText(
 
   if (error) {
     console.error("Failed to update nihuyasi text:", error.message);
-    return false;
+    return { ok: false, error: "save_failed" };
   }
 
   revalidateNihuyasi();
-  return true;
+  return { ok: true };
 }
 
 export async function updateNihuyasiDate(
   id: string,
   date: string
-): Promise<boolean> {
+): Promise<NihuyasiMutationResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(COCKPIT_LOGIN_PATH);
+    return { ok: false, error: "auth" };
   }
 
   if (!id || !date) {
-    return false;
+    return { ok: false, error: "empty" };
   }
 
   const { error } = await supabase
@@ -108,25 +110,27 @@ export async function updateNihuyasiDate(
 
   if (error) {
     console.error("Failed to update nihuyasi date:", error.message);
-    return false;
+    return { ok: false, error: "save_failed" };
   }
 
   revalidateNihuyasi();
-  return true;
+  return { ok: true };
 }
 
-export async function deleteNihuyasiEntry(id: string): Promise<boolean> {
+export async function deleteNihuyasiEntry(
+  id: string
+): Promise<NihuyasiMutationResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(COCKPIT_LOGIN_PATH);
+    return { ok: false, error: "auth" };
   }
 
   if (!id) {
-    return false;
+    return { ok: false, error: "empty" };
   }
 
   const { error } = await supabase
@@ -137,9 +141,9 @@ export async function deleteNihuyasiEntry(id: string): Promise<boolean> {
 
   if (error) {
     console.error("Failed to delete nihuyasi entry:", error.message);
-    return false;
+    return { ok: false, error: "save_failed" };
   }
 
   revalidateNihuyasi();
-  return true;
+  return { ok: true };
 }

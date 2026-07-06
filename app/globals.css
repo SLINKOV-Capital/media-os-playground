@@ -3754,6 +3754,13 @@ select.form-field-control {
   border: 0;
 }
 
+.nihuyasi-error {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #c0392b;
+}
+
 .nihuyasi-create-section {
   margin: 0 0 32px;
 }

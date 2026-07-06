@@ -3,6 +3,7 @@
 import { createNihuyasiEntry } from "@/app/nihuyasi/actions";
 import { LinkifiedText } from "@/components/LinkifiedText";
 import type { NihuyasiEntry } from "@/lib/types";
+import { useNihuyasiActionError } from "@/lib/useNihuyasiActionError";
 import { useCallback, useRef, useState, useTransition } from "react";
 
 type TodayNihuyasiSectionProps = {
@@ -25,7 +26,9 @@ export function TodayNihuyasiSection({
 }: TodayNihuyasiSectionProps) {
   const textRef = useRef<HTMLTextAreaElement>(null);
   const [entries, setEntries] = useState(initialEntries);
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const handleActionError = useNihuyasiActionError(setError);
 
   const handleTextareaResize = useCallback(() => {
     resizeTextarea(textRef.current);
@@ -41,19 +44,27 @@ export function TodayNihuyasiSection({
       return;
     }
 
+    setError(null);
+
     startTransition(async () => {
-      const created = await createNihuyasiEntry(trimmed, todayDate);
+      try {
+        const result = await createNihuyasiEntry(trimmed, todayDate);
 
-      if (!created) {
-        return;
-      }
+        if (!result.ok) {
+          handleActionError(result.error);
+          return;
+        }
 
-      setEntries((current) => [...current, created]);
+        setEntries((current) => [...current, result.entry]);
 
-      if (textRef.current) {
-        textRef.current.value = "";
-        resizeTextarea(textRef.current);
-        textRef.current.focus();
+        if (textRef.current) {
+          textRef.current.value = "";
+          resizeTextarea(textRef.current);
+          textRef.current.focus();
+        }
+      } catch (caught) {
+        console.error("Failed to create nihuyasi entry:", caught);
+        setError("Не удалось сохранить запись");
       }
     });
   }
@@ -91,6 +102,12 @@ export function TodayNihuyasiSection({
           Добавить
         </button>
       </form>
+
+      {error && (
+        <p className="nihuyasi-error" role="alert">
+          {error}
+        </p>
+      )}
     </section>
   );
 }

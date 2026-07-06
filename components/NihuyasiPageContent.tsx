@@ -15,6 +15,8 @@ import {
   sortNihuyasiEntries,
 } from "@/lib/format";
 import type { NihuyasiEntry } from "@/lib/types";
+import type { NihuyasiErrorCode } from "@/lib/nihuyasi";
+import { useNihuyasiActionError } from "@/lib/useNihuyasiActionError";
 import {
   useCallback,
   useEffect,
@@ -41,10 +43,12 @@ function NihuyasiEntryRow({
   entry,
   onUpdate,
   onDelete,
+  onError,
 }: {
   entry: NihuyasiEntry;
   onUpdate: (entry: NihuyasiEntry) => void;
   onDelete: (id: string) => void;
+  onError: (error: NihuyasiErrorCode) => void;
 }) {
   const dateInputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -91,14 +95,31 @@ function NihuyasiEntryRow({
     }
 
     startTransition(async () => {
-      const ok = await updateNihuyasiText(entry.id, text);
+      try {
+        const result = await updateNihuyasiText(entry.id, text);
 
-      if (ok) {
+        if (!result.ok) {
+          onError(result.error);
+
+          if (textRef.current) {
+            textRef.current.value = lastSavedText.current;
+          }
+
+          setIsEditing(false);
+          return;
+        }
+
         lastSavedText.current = text;
         onUpdate({ ...entry, text });
         setIsEditing(false);
-      } else if (textRef.current) {
-        textRef.current.value = lastSavedText.current;
+      } catch (caught) {
+        console.error("Failed to update nihuyasi text:", caught);
+        onError("save_failed");
+
+        if (textRef.current) {
+          textRef.current.value = lastSavedText.current;
+        }
+
         setIsEditing(false);
       }
     });
@@ -110,22 +131,45 @@ function NihuyasiEntryRow({
     }
 
     startTransition(async () => {
-      const ok = await updateNihuyasiDate(entry.id, nextDate);
+      try {
+        const result = await updateNihuyasiDate(entry.id, nextDate);
 
-      if (ok) {
+        if (!result.ok) {
+          onError(result.error);
+
+          if (dateInputRef.current) {
+            dateInputRef.current.value = entry.date;
+          }
+
+          return;
+        }
+
         onUpdate({ ...entry, date: nextDate });
-      } else if (dateInputRef.current) {
-        dateInputRef.current.value = entry.date;
+      } catch (caught) {
+        console.error("Failed to update nihuyasi date:", caught);
+        onError("save_failed");
+
+        if (dateInputRef.current) {
+          dateInputRef.current.value = entry.date;
+        }
       }
     });
   }
 
   function handleDelete() {
     startTransition(async () => {
-      const ok = await deleteNihuyasiEntry(entry.id);
+      try {
+        const result = await deleteNihuyasiEntry(entry.id);
 
-      if (ok) {
+        if (!result.ok) {
+          onError(result.error);
+          return;
+        }
+
         onDelete(entry.id);
+      } catch (caught) {
+        console.error("Failed to delete nihuyasi entry:", caught);
+        onError("save_failed");
       }
     });
   }
@@ -217,8 +261,14 @@ export function NihuyasiPageContent({
   const dateRef = useRef<HTMLInputElement>(null);
   const [entries, setEntries] = useState(initialEntries);
   const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [todayDate, setTodayDate] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const todayDate = formatLocalIsoDate();
+  const handleActionError = useNihuyasiActionError(setError);
+
+  useEffect(() => {
+    setTodayDate(formatLocalIsoDate());
+  }, []);
 
   const handleTextareaResize = useCallback(() => {
     resizeTextarea(textRef.current);
@@ -241,26 +291,36 @@ export function NihuyasiPageContent({
     event.preventDefault();
 
     const text = textRef.current?.value ?? "";
-    const date = dateRef.current?.value ?? todayDate;
+    const date = dateRef.current?.value ?? todayDate ?? "";
     const trimmed = text.trim();
 
     if (!trimmed) {
       return;
     }
 
+    setError(null);
+
     startTransition(async () => {
-      const created = await createNihuyasiEntry(trimmed, date);
+      try {
+        const result = await createNihuyasiEntry(trimmed, date);
 
-      if (!created) {
-        return;
-      }
+        if (!result.ok) {
+          handleActionError(result.error);
+          return;
+        }
 
-      setEntries((current) => sortNihuyasiEntries([created, ...current]));
+        setEntries((current) =>
+          sortNihuyasiEntries([result.entry, ...current])
+        );
 
-      if (textRef.current) {
-        textRef.current.value = "";
-        resizeTextarea(textRef.current);
-        textRef.current.focus();
+        if (textRef.current) {
+          textRef.current.value = "";
+          resizeTextarea(textRef.current);
+          textRef.current.focus();
+        }
+      } catch (caught) {
+        console.error("Failed to create nihuyasi entry:", caught);
+        setError("Не удалось сохранить запись");
       }
     });
   }
@@ -310,8 +370,9 @@ export function NihuyasiPageContent({
                 ref={dateRef}
                 id="nihuyasi-date"
                 type="date"
-                defaultValue={todayDate}
-                disabled={isPending}
+                key={todayDate ?? "pending"}
+                defaultValue={todayDate ?? undefined}
+                disabled={isPending || !todayDate}
               />
             </div>
           </div>
@@ -320,6 +381,12 @@ export function NihuyasiPageContent({
             Добавить
           </button>
         </form>
+
+        {error && (
+          <p className="nihuyasi-error" role="alert">
+            {error}
+          </p>
+        )}
       </section>
 
       <NihuyasiStrip entries={entries} days={30} />
@@ -359,6 +426,7 @@ export function NihuyasiPageContent({
                     entry={entry}
                     onUpdate={handleUpdate}
                     onDelete={handleDelete}
+                    onError={handleActionError}
                   />
                 ))}
               </ul>

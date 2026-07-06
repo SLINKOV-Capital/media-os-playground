@@ -6,7 +6,8 @@ import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoscowIsoDate, formatTodayHeading } from "@/lib/format";
 import { mapActionMaterials } from "@/lib/mapActionMaterials";
-import type { Document, NihuyasiEntry } from "@/lib/types";
+import { normalizeNihuyasiEntry } from "@/lib/nihuyasi";
+import type { Document } from "@/lib/types";
 import { redirect } from "next/navigation";
 
 export default async function TodayPage() {
@@ -60,7 +61,9 @@ export default async function TodayPage() {
     };
   });
 
-  const nihuyasiEntries = (nihuyasiData ?? []) as NihuyasiEntry[];
+  const nihuyasiEntries = (nihuyasiData ?? []).map((row) =>
+    normalizeNihuyasiEntry(row as Record<string, unknown>)
+  );
 
   return (
     <AppShell>

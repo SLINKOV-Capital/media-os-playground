@@ -39,8 +39,16 @@ export function formatLocalIsoDate(date: Date = new Date()): string {
 }
 
 export function formatNihuyasiDateHeader(isoDate: string): string {
-  const [year, month, day] = isoDate.split("-").map(Number);
+  if (!isoDate || !/^\d{4}-\d{2}-\d{2}/.test(isoDate)) {
+    return isoDate || "—";
+  }
+
+  const [year, month, day] = isoDate.slice(0, 10).split("-").map(Number);
   const date = new Date(year, month - 1, day);
+
+  if (Number.isNaN(date.getTime())) {
+    return isoDate.slice(0, 10);
+  }
 
   return date.toLocaleDateString("ru-RU", {
     day: "numeric",
@@ -61,7 +69,9 @@ export function groupNihuyasiByDate<T extends { date: string; created_at: string
   }
 
   for (const [date, groupEntries] of groups) {
-    groupEntries.sort((a, b) => b.created_at.localeCompare(a.created_at));
+    groupEntries.sort((a, b) =>
+      (b.created_at ?? "").localeCompare(a.created_at ?? "")
+    );
     groups.set(date, groupEntries);
   }
 
@@ -76,7 +86,7 @@ export function sortNihuyasiEntries<T extends { date: string; created_at: string
       return b.date.localeCompare(a.date);
     }
 
-    return b.created_at.localeCompare(a.created_at);
+    return (b.created_at ?? "").localeCompare(a.created_at ?? "");
   });
 }
 
