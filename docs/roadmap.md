@@ -56,6 +56,7 @@
 - Breadcrumbs / recent documents в sidebar
 - Очистка legacy-кода и таблиц v0.1
 - `/templates/[id]/edit` — property rows унификация
+- **После запуска сайта и блога:** страницы семинара и для бизнеса (есть материал); карточки `#seminars` целиком кликабельные — см. `docs/vision.md`
 
 ## Когда-нибудь
 

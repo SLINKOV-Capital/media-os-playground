@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/AppShell";
+import { SortableDocumentsList } from "@/components/SortableDocumentsList";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate } from "@/lib/format";
 import type { Document } from "@/lib/types";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -19,6 +19,8 @@ export default async function DocumentsPage() {
   const { data, error } = await supabase
     .from("documents")
     .select("*")
+    .eq("user_id", user.id)
+    .order("sort_order", { ascending: true })
     .order("updated_at", { ascending: false });
 
   if (error) {
@@ -34,7 +36,7 @@ export default async function DocumentsPage() {
           <div>
             <h1 className="content-title">Документы</h1>
             <p className="content-subtitle">
-              Главные объекты работы в Media OS
+              Перетащи, чтобы выставить приоритет. Первые 3 — в фокусе.
             </p>
           </div>
           <Link href="/documents/new" className="notion-new-button">
@@ -50,29 +52,7 @@ export default async function DocumentsPage() {
             </Link>
           </div>
         ) : (
-          <div className="collection-list">
-            <div
-              className="collection-header collection-header-documents"
-              aria-hidden="true"
-            >
-              <span>Название</span>
-              <span>Тип</span>
-              <span>Обновлён</span>
-            </div>
-            {documents.map((document) => (
-              <Link
-                key={document.id}
-                href={`/documents/${document.id}`}
-                className="collection-row collection-row-documents"
-              >
-                <span className="collection-primary">{document.title}</span>
-                <span className="collection-meta">{document.document_type}</span>
-                <span className="collection-meta">
-                  {formatDate(document.updated_at)}
-                </span>
-              </Link>
-            ))}
-          </div>
+          <SortableDocumentsList documents={documents} />
         )}
       </div>
     </AppShell>

@@ -16,6 +16,9 @@
 .env
 .env*.local
 
+# Cursor MCP (may contain Supabase PAT)
+.cursor/mcp.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*

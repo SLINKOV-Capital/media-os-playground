@@ -33,6 +33,7 @@ export type Document = {
   site_slug: string | null;
   site_published_at: string | null;
   site_featured: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 };

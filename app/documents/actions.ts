@@ -86,6 +86,47 @@ async function linkDocumentMaterialRecord(
   return true;
 }
 
+/** Repair orphan materials that still have legacy materials.document_id. */
+export async function ensureMaterialDocumentLink(
+  materialId: string,
+  documentId: string
+): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user || !materialId || !documentId) {
+    return false;
+  }
+
+  const [{ data: material }, { data: document }] = await Promise.all([
+    supabase
+      .from("materials")
+      .select("id")
+      .eq("id", materialId)
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("documents")
+      .select("id")
+      .eq("id", documentId)
+      .eq("user_id", user.id)
+      .maybeSingle(),
+  ]);
+
+  if (!material || !document) {
+    return false;
+  }
+
+  return linkDocumentMaterialRecord(
+    supabase,
+    documentId,
+    materialId,
+    user.id
+  );
+}
+
 async function findExistingMaterialByTitle(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
@@ -771,12 +812,28 @@ export async function createDocument(formData: FormData): Promise<void> {
     return;
   }
 
+  const { data: firstDocument, error: sortError } = await supabase
+    .from("documents")
+    .select("sort_order")
+    .eq("user_id", user.id)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (sortError) {
+    console.error("Failed to fetch document sort order:", sortError.message);
+    return;
+  }
+
+  const sort_order = (firstDocument?.sort_order ?? 0) - 1;
+
   const { data, error } = await supabase
     .from("documents")
     .insert({
       user_id: user.id,
       title,
       document_type,
+      sort_order,
     })
     .select("id")
     .single();
@@ -788,6 +845,64 @@ export async function createDocument(formData: FormData): Promise<void> {
 
   revalidatePath("/documents");
   redirect(`/documents/${data.id}`);
+}
+
+export async function reorderDocuments(orderedIds: string[]): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(COCKPIT_LOGIN_PATH);
+  }
+
+  if (orderedIds.length === 0) {
+    return;
+  }
+
+  const { data: existingDocuments, error: fetchError } = await supabase
+    .from("documents")
+    .select("id")
+    .eq("user_id", user.id);
+
+  if (fetchError) {
+    console.error("Failed to fetch documents for reorder:", fetchError.message);
+    return;
+  }
+
+  const existingIds = new Set(
+    (existingDocuments ?? []).map((document) => document.id)
+  );
+
+  if (orderedIds.length !== existingIds.size) {
+    return;
+  }
+
+  for (const id of orderedIds) {
+    if (!existingIds.has(id)) {
+      return;
+    }
+  }
+
+  const updates = orderedIds.map((id, index) =>
+    supabase
+      .from("documents")
+      .update({ sort_order: index })
+      .eq("id", id)
+      .eq("user_id", user.id)
+  );
+
+  const results = await Promise.all(updates);
+
+  for (const { error } of results) {
+    if (error) {
+      console.error("Failed to reorder documents:", error.message);
+      return;
+    }
+  }
+
+  revalidatePath("/documents");
 }
 
 export async function generateActions(formData: FormData): Promise<void> {
@@ -1329,7 +1444,9 @@ export async function reorderTodayActions(
   revalidatePath("/today");
 }
 
-export async function linkMaterialToDocument(formData: FormData): Promise<void> {
+export async function linkMaterialToDocument(
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -1343,7 +1460,7 @@ export async function linkMaterialToDocument(formData: FormData): Promise<void> 
   const materialId = String(formData.get("material_id") ?? "");
 
   if (!documentId || !materialId) {
-    return;
+    return { ok: false, error: "Недостаточно данных для привязки" };
   }
 
   const [{ data: document, error: documentError }, { data: material, error: materialError }] =
@@ -1367,7 +1484,7 @@ export async function linkMaterialToDocument(formData: FormData): Promise<void> 
       "Failed to validate document/material link:",
       documentError?.message ?? materialError?.message
     );
-    return;
+    return { ok: false, error: "Не удалось привязать материал" };
   }
 
   const { error } = await supabase.from("document_materials").insert({
@@ -1377,13 +1494,17 @@ export async function linkMaterialToDocument(formData: FormData): Promise<void> 
   });
 
   if (error) {
-    if (error.code !== "23505") {
-      console.error("Failed to link material to document:", error.message);
+    if (error.code === "23505") {
+      await revalidateMaterialPublicSites(supabase, materialId, documentId);
+      return { ok: true };
     }
-    return;
+
+    console.error("Failed to link material to document:", error.message);
+    return { ok: false, error: "Не удалось привязать материал" };
   }
 
   await revalidateMaterialPublicSites(supabase, materialId, documentId);
+  return { ok: true };
 }
 
 export async function findMaterialByTitle(title: string) {
@@ -1595,6 +1716,23 @@ export async function createMaterial(formData: FormData): Promise<void> {
   );
 
   if (!linked) {
+    // Don't leave a global material without document_materials row.
+    const { error: cleanupError } = await supabase
+      .from("materials")
+      .delete()
+      .eq("id", material.id)
+      .eq("user_id", user.id);
+
+    if (cleanupError) {
+      console.error(
+        "Failed to cleanup material after link failure:",
+        cleanupError.message
+      );
+    }
+
+    console.error(
+      "Failed to create material: document_materials link was not created"
+    );
     return;
   }
 

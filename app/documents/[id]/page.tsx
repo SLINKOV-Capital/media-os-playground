@@ -10,8 +10,11 @@ import { listTemplateDocumentTypes } from "@/lib/document-types";
 import { isDocumentSiteLocked } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { mapActionsMaterials } from "@/lib/mapActionMaterials";
-import { mapDocumentMaterialsFromRows } from "@/lib/mapDocumentMaterials";
-import type { Document, WorkflowTemplateV2 } from "@/lib/types";
+import {
+  collectMaterialIdsFromLinkRows,
+  mapDocumentMaterialsFromRows,
+} from "@/lib/mapDocumentMaterials";
+import type { Document, Material, WorkflowTemplateV2 } from "@/lib/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -79,7 +82,40 @@ export default async function DocumentPage({
     ]);
 
   const actions = mapActionsMaterials(actionsData ?? []);
-  const materials = mapDocumentMaterialsFromRows(documentMaterialsData ?? []);
+  let materials = mapDocumentMaterialsFromRows(documentMaterialsData ?? []);
+
+  // Fallback when materials(*) embed returns null but junction rows exist.
+  if (materials.length === 0) {
+    const materialIds = collectMaterialIdsFromLinkRows(
+      documentMaterialsData ?? []
+    );
+
+    if (materialIds.length > 0) {
+      const { data: materialsData, error: materialsError } = await supabase
+        .from("materials")
+        .select("*")
+        .eq("user_id", user.id)
+        .in("id", materialIds);
+
+      if (materialsError) {
+        console.error(
+          "Failed to fetch document materials by id:",
+          materialsError.message
+        );
+      } else {
+        const byId = new Map(
+          ((materialsData ?? []) as Material[]).map((material) => [
+            material.id,
+            material,
+          ])
+        );
+        materials = materialIds
+          .map((materialId) => byId.get(materialId))
+          .filter((material): material is Material => Boolean(material));
+      }
+    }
+  }
+
   const templateTypes = listTemplateDocumentTypes(templatesData ?? []);
 
   let template: WorkflowTemplateV2 | null = null;

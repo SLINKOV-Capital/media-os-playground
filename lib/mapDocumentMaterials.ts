@@ -43,3 +43,29 @@ export function mapDocumentLinksFromRows(
       Boolean(document)
     );
 }
+
+/** Prefer explicit material_id list when embed join is missing/null. */
+export function collectMaterialIdsFromLinkRows(
+  rows: Array<{ material_id?: string | null } | null | undefined>
+): string[] {
+  return [
+    ...new Set(
+      rows
+        .map((row) => row?.material_id?.trim())
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+}
+
+/** Prefer explicit document_id list when embed join is missing/null. */
+export function collectDocumentIdsFromLinkRows(
+  rows: Array<{ document_id?: string | null } | null | undefined>
+): string[] {
+  return [
+    ...new Set(
+      rows
+        .map((row) => row?.document_id?.trim())
+        .filter((id): id is string => Boolean(id))
+    ),
+  ];
+}

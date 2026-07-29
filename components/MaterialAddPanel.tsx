@@ -21,11 +21,13 @@ type MaterialSearchResult = {
 type MaterialAddPanelProps = {
   documentId: string;
   linkedMaterialIds: string[];
+  onLinked?: (material: MaterialSearchResult) => void;
 };
 
 export function MaterialAddPanel({
   documentId,
   linkedMaterialIds,
+  onLinked,
 }: MaterialAddPanelProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -34,6 +36,7 @@ export function MaterialAddPanel({
   const [exactMatch, setExactMatch] = useState<MaterialSearchResult | null>(
     null
   );
+  const [error, setError] = useState<string | null>(null);
   const [isSearching, startSearchTransition] = useTransition();
   const [isLinking, startLinkTransition] = useTransition();
   const titleRef = useRef<HTMLTextAreaElement>(null);
@@ -105,16 +108,31 @@ export function MaterialAddPanel({
     setTitle("");
     setResults([]);
     setExactMatch(null);
+    setError(null);
   }
 
-  function handleLink(materialId: string) {
+  function handleLink(material: MaterialSearchResult) {
+    setError(null);
+
     startLinkTransition(async () => {
-      const formData = new FormData();
-      formData.set("document_id", documentId);
-      formData.set("material_id", materialId);
-      await linkMaterialToDocument(formData);
-      closePanel();
-      router.refresh();
+      try {
+        const formData = new FormData();
+        formData.set("document_id", documentId);
+        formData.set("material_id", material.id);
+        const result = await linkMaterialToDocument(formData);
+
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+
+        onLinked?.(material);
+        closePanel();
+        router.refresh();
+      } catch (caught) {
+        console.error("Failed to link material:", caught);
+        setError("Не удалось привязать материал");
+      }
     });
   }
 
@@ -191,9 +209,9 @@ export function MaterialAddPanel({
               type="button"
               className="ghost-button"
               disabled={isLinking}
-              onClick={() => handleLink(exactMatch.id)}
+              onClick={() => handleLink(exactMatch)}
             >
-              Привязать к документу
+              {isLinking ? "Привязка…" : "Привязать к документу"}
             </button>
           )}
         </div>
@@ -224,9 +242,9 @@ export function MaterialAddPanel({
                     type="button"
                     className="text-button"
                     disabled={isLinking}
-                    onClick={() => handleLink(material.id)}
+                    onClick={() => handleLink(material)}
                   >
-                    Привязать
+                    {isLinking ? "…" : "Привязать"}
                   </button>
                 )}
               </li>
@@ -234,6 +252,8 @@ export function MaterialAddPanel({
           })}
         </ul>
       )}
+
+      {error && <p className="material-add-error">{error}</p>}
 
       {showCreateForm && (
         <form action={createMaterial} className="material-add-form">

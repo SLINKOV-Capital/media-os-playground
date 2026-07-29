@@ -1,5 +1,6 @@
 import {
   updateMaterialTitle,
+  ensureMaterialDocumentLink,
 } from "@/app/documents/actions";
 import { AppShell } from "@/components/AppShell";
 import { PageTitle } from "@/components/PageTitle";
@@ -7,7 +8,10 @@ import { MaterialDocumentsSection } from "@/components/MaterialDocumentsSection"
 import { MaterialPropertiesEditor } from "@/components/MaterialPropertiesEditor";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
-import { mapDocumentLinksFromRows } from "@/lib/mapDocumentMaterials";
+import {
+  collectDocumentIdsFromLinkRows,
+  mapDocumentLinksFromRows,
+} from "@/lib/mapDocumentMaterials";
 import { getMaterialTypeIcon } from "@/lib/materialTypes";
 import type { Document, Material } from "@/lib/types";
 import Link from "next/link";
@@ -16,6 +20,52 @@ import { notFound, redirect } from "next/navigation";
 type MaterialPageProps = {
   params: Promise<{ id: string }>;
 };
+
+async function loadLinkedDocuments(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  materialId: string,
+  userId: string
+): Promise<Pick<Document, "id" | "title">[]> {
+  const { data: linkRows, error: linksError } = await supabase
+    .from("document_materials")
+    .select("document_id, documents(id, title)")
+    .eq("material_id", materialId)
+    .eq("user_id", userId);
+
+  if (linksError) {
+    console.error("Failed to fetch linked documents:", linksError.message);
+  }
+
+  const fromEmbed = mapDocumentLinksFromRows(linkRows ?? []);
+
+  if (fromEmbed.length > 0) {
+    return fromEmbed;
+  }
+
+  // Fallback: embed can return null documents even when junction rows exist.
+  const documentIds = collectDocumentIdsFromLinkRows(linkRows ?? []);
+
+  if (documentIds.length === 0) {
+    return [];
+  }
+
+  const { data: documentsData, error: documentsError } = await supabase
+    .from("documents")
+    .select("id, title")
+    .eq("user_id", userId)
+    .in("id", documentIds)
+    .order("title", { ascending: true });
+
+  if (documentsError) {
+    console.error(
+      "Failed to fetch documents for material links:",
+      documentsError.message
+    );
+    return [];
+  }
+
+  return (documentsData ?? []) as Pick<Document, "id" | "title">[];
+}
 
 export default async function MaterialPage({ params }: MaterialPageProps) {
   const { id } = await params;
@@ -31,7 +81,6 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
 
   const [
     { data: materialData, error: materialError },
-    { data: documentLinksData, error: documentLinksError },
     { data: allDocumentsData, error: allDocumentsError },
   ] = await Promise.all([
     supabase
@@ -40,11 +89,6 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
       .eq("id", id)
       .eq("user_id", user.id)
       .maybeSingle(),
-    supabase
-      .from("document_materials")
-      .select("document_id, documents(id, title)")
-      .eq("material_id", id)
-      .eq("user_id", user.id),
     supabase
       .from("documents")
       .select("id, title")
@@ -61,16 +105,25 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
     notFound();
   }
 
-  if (documentLinksError) {
-    console.error("Failed to fetch linked documents:", documentLinksError.message);
-  }
-
   if (allDocumentsError) {
     console.error("Failed to fetch documents:", allDocumentsError.message);
   }
 
   const material = materialData as Material;
-  const linkedDocuments = mapDocumentLinksFromRows(documentLinksData ?? []);
+  let linkedDocuments = await loadLinkedDocuments(supabase, material.id, user.id);
+
+  // Heal orphans created when materials.document_id was set but junction insert failed.
+  if (linkedDocuments.length === 0 && material.document_id) {
+    const healed = await ensureMaterialDocumentLink(
+      material.id,
+      material.document_id
+    );
+
+    if (healed) {
+      linkedDocuments = await loadLinkedDocuments(supabase, material.id, user.id);
+    }
+  }
+
   const linkedDocumentIds = new Set(linkedDocuments.map((document) => document.id));
   const allDocuments = (allDocumentsData ?? []) as Pick<Document, "id" | "title">[];
   const availableDocuments = allDocuments.filter(

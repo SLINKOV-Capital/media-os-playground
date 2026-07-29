@@ -104,7 +104,13 @@ export function MaterialDocumentsSection({
       const formData = new FormData();
       formData.set("document_id", selectedDocumentId);
       formData.set("material_id", materialId);
-      await linkMaterialToDocument(formData);
+      const result = await linkMaterialToDocument(formData);
+
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+
       closeDropdown();
       setError(null);
       router.refresh();
