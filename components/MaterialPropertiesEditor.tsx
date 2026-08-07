@@ -3,6 +3,7 @@
 import { updateMaterial } from "@/app/documents/actions";
 import { MaterialPreviewUpload } from "@/components/MaterialPreviewUpload";
 import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
+import { MaterialUrlField } from "@/components/MaterialUrlField";
 import type { Material } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -107,13 +108,11 @@ export function MaterialPropertiesEditor({
           <span className="notion-property-optional-tag">необязательно</span>
         </label>
         <div className="notion-property-value">
-          <input
+          <MaterialUrlField
             id={`material-url-${material.id}`}
-            type="text"
-            defaultValue={material.file_url_or_path ?? ""}
-            placeholder="https://…"
+            initialValue={material.file_url_or_path ?? ""}
             disabled={isPending}
-            onBlur={(event) => saveField("file_url_or_path", event.target.value)}
+            onBlur={(value) => saveField("file_url_or_path", value)}
           />
         </div>
       </div>

@@ -5559,6 +5559,16 @@ select.form-field-control {
   outline: none;
 }
 
+.material-url-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.material-url-field input {
+  min-width: 0;
+}
+
 .notion-property-hint {
   margin-top: 6px;
   font-size: 11px;
@@ -5962,4 +5972,3 @@ select.form-field-control {
   background: var(--bg-hover);
   color: var(--text);
 }
-

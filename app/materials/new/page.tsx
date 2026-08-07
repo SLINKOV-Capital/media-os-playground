@@ -1,6 +1,7 @@
 import { createMaterial } from "@/app/documents/actions";
 import { AppShell } from "@/components/AppShell";
 import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
+import { MaterialUrlField } from "@/components/MaterialUrlField";
 import { PageTitle } from "@/components/PageTitle";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
@@ -117,11 +118,9 @@ export default async function NewMaterialPage() {
                   </span>
                 </label>
                 <div className="notion-property-value">
-                  <input
+                  <MaterialUrlField
                     id="file_url_or_path"
                     name="file_url_or_path"
-                    type="text"
-                    placeholder="https://…"
                   />
                 </div>
               </div>
