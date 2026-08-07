@@ -1,3 +1,5 @@
+import type { MaterialTypeValue } from "@/lib/materialTypes";
+
 export type TaskStatus = "new" | "decision" | "stuck" | "done" | "let_go";
 
 export type Project = {
@@ -53,10 +55,8 @@ export type PublicDocument = Pick<
 export type Material = {
   id: string;
   user_id: string;
-  /** @deprecated Use document_materials. DB NOT NULL compat only on create. */
-  document_id?: string | null;
   title: string;
-  material_type: string;
+  material_type: MaterialTypeValue;
   file_url_or_path: string | null;
   notes: string | null;
   preview_url: string | null;

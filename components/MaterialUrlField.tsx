@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import type { MaterialTypeValue } from "@/lib/materialTypes";
 
 type MaterialUrlFieldProps = {
   id: string;
+  materialType: MaterialTypeValue;
   name?: string;
   initialValue?: string;
   disabled?: boolean;
@@ -12,6 +14,7 @@ type MaterialUrlFieldProps = {
 
 export function MaterialUrlField({
   id,
+  materialType,
   name,
   initialValue = "",
   disabled = false,
@@ -31,13 +34,15 @@ export function MaterialUrlField({
         onChange={(event) => setValue(event.target.value)}
         onBlur={(event) => onBlur?.(event.target.value)}
       />
-      <a
-        className="ghost-button"
-        href={value || undefined}
-        aria-disabled={value ? undefined : true}
-      >
-        Открыть в Obsidian
-      </a>
+      {materialType === "obsidian" && (
+        <a
+          className="ghost-button"
+          href={value || undefined}
+          aria-disabled={value ? undefined : true}
+        >
+          Открыть в Obsidian
+        </a>
+      )}
     </div>
   );
 }

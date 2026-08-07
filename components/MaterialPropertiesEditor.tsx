@@ -4,6 +4,7 @@ import { updateMaterial } from "@/app/documents/actions";
 import { MaterialPreviewUpload } from "@/components/MaterialPreviewUpload";
 import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
 import { MaterialUrlField } from "@/components/MaterialUrlField";
+import type { MaterialTypeValue } from "@/lib/materialTypes";
 import type { Material } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -60,8 +61,8 @@ export function MaterialPropertiesEditor({
 
       if (result.ok) {
         if (field === "material_type") {
-          lastSavedType.current = value;
-          setMaterialType(value);
+          lastSavedType.current = value as MaterialTypeValue;
+          setMaterialType(value as MaterialTypeValue);
         }
 
         if (field === "file_url_or_path") {
@@ -91,7 +92,7 @@ export function MaterialPropertiesEditor({
             id={`material-type-${material.id}`}
             defaultValue={material.material_type}
             onChange={(event) => {
-              setMaterialType(event.target.value);
+              setMaterialType(event.target.value as MaterialTypeValue);
               saveField("material_type", event.target.value);
             }}
             disabled={isPending}
@@ -110,6 +111,7 @@ export function MaterialPropertiesEditor({
         <div className="notion-property-value">
           <MaterialUrlField
             id={`material-url-${material.id}`}
+            materialType={materialType}
             initialValue={material.file_url_or_path ?? ""}
             disabled={isPending}
             onBlur={(value) => saveField("file_url_or_path", value)}

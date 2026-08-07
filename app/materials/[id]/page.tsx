@@ -1,7 +1,4 @@
-import {
-  updateMaterialTitle,
-  ensureMaterialDocumentLink,
-} from "@/app/documents/actions";
+import { updateMaterialTitle } from "@/app/documents/actions";
 import { AppShell } from "@/components/AppShell";
 import { PageTitle } from "@/components/PageTitle";
 import { MaterialDocumentsSection } from "@/components/MaterialDocumentsSection";
@@ -110,19 +107,11 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
   }
 
   const material = materialData as Material;
-  let linkedDocuments = await loadLinkedDocuments(supabase, material.id, user.id);
-
-  // Heal orphans created when materials.document_id was set but junction insert failed.
-  if (linkedDocuments.length === 0 && material.document_id) {
-    const healed = await ensureMaterialDocumentLink(
-      material.id,
-      material.document_id
-    );
-
-    if (healed) {
-      linkedDocuments = await loadLinkedDocuments(supabase, material.id, user.id);
-    }
-  }
+  const linkedDocuments = await loadLinkedDocuments(
+    supabase,
+    material.id,
+    user.id
+  );
 
   const linkedDocumentIds = new Set(linkedDocuments.map((document) => document.id));
   const allDocuments = (allDocumentsData ?? []) as Pick<Document, "id" | "title">[];

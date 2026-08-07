@@ -1,7 +1,6 @@
 import { createMaterial } from "@/app/documents/actions";
 import { AppShell } from "@/components/AppShell";
-import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
-import { MaterialUrlField } from "@/components/MaterialUrlField";
+import { MaterialCreateProperties } from "@/components/MaterialCreateProperties";
 import { PageTitle } from "@/components/PageTitle";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
@@ -94,36 +93,7 @@ export default async function NewMaterialPage() {
                 </div>
               </div>
 
-              <div className="notion-property">
-                <label htmlFor="material_type" className="notion-property-label">
-                  Тип
-                </label>
-                <div className="notion-property-value">
-                  <MaterialTypeSelect
-                    id="material_type"
-                    name="material_type"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="notion-property notion-property-optional">
-                <label
-                  htmlFor="file_url_or_path"
-                  className="notion-property-label"
-                >
-                  <span className="notion-property-label-primary">URL / путь</span>
-                  <span className="notion-property-optional-tag">
-                    необязательно
-                  </span>
-                </label>
-                <div className="notion-property-value">
-                  <MaterialUrlField
-                    id="file_url_or_path"
-                    name="file_url_or_path"
-                  />
-                </div>
-              </div>
+              <MaterialCreateProperties idSuffix="new" />
 
               <div className="material-content-block">
                 <label htmlFor="notes" className="material-content-label">

@@ -13,7 +13,7 @@ type MaterialTypeSelectProps = {
 export function MaterialTypeSelect({
   id,
   name,
-  defaultValue = "link",
+  defaultValue = "other",
   value,
   onChange,
   disabled,

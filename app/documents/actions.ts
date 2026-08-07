@@ -86,47 +86,6 @@ async function linkDocumentMaterialRecord(
   return true;
 }
 
-/** Repair orphan materials that still have legacy materials.document_id. */
-export async function ensureMaterialDocumentLink(
-  materialId: string,
-  documentId: string
-): Promise<boolean> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user || !materialId || !documentId) {
-    return false;
-  }
-
-  const [{ data: material }, { data: document }] = await Promise.all([
-    supabase
-      .from("materials")
-      .select("id")
-      .eq("id", materialId)
-      .eq("user_id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("documents")
-      .select("id")
-      .eq("id", documentId)
-      .eq("user_id", user.id)
-      .maybeSingle(),
-  ]);
-
-  if (!material || !document) {
-    return false;
-  }
-
-  return linkDocumentMaterialRecord(
-    supabase,
-    documentId,
-    materialId,
-    user.id
-  );
-}
-
 async function findExistingMaterialByTitle(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
@@ -1674,7 +1633,6 @@ export async function createMaterial(formData: FormData): Promise<void> {
     .from("materials")
     .insert({
       user_id: user.id,
-      document_id: documentId,
       title,
       material_type,
       file_url_or_path: file_url_or_path || null,

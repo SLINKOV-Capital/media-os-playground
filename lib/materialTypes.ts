@@ -1,9 +1,8 @@
 export const MATERIAL_TYPES = [
-  { value: "link", label: "Ссылка", icon: "🔗" },
-  { value: "youtube", label: "YouTube", icon: "▶️" },
-  { value: "file", label: "Файл", icon: "📄" },
-  { value: "note", label: "Заметка", icon: "📝" },
+  { value: "obsidian", label: "Obsidian", icon: "💎" },
   { value: "image", label: "Изображение", icon: "🖼" },
+  { value: "video", label: "Видео", icon: "🎬" },
+  { value: "youtube", label: "YouTube", icon: "▶️" },
   { value: "other", label: "Другое", icon: "📦" },
 ] as const;
 

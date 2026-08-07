@@ -6,8 +6,9 @@ import {
   linkMaterialToDocument,
   searchMaterials,
 } from "@/app/documents/actions";
-import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
+import { MaterialCreateProperties } from "@/components/MaterialCreateProperties";
 import { getMaterialTypeIcon } from "@/lib/materialTypes";
+import type { MaterialTypeValue } from "@/lib/materialTypes";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
@@ -15,7 +16,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 type MaterialSearchResult = {
   id: string;
   title: string;
-  material_type: string;
+  material_type: MaterialTypeValue;
 };
 
 type MaterialAddPanelProps = {
@@ -260,39 +261,7 @@ export function MaterialAddPanel({
           <input type="hidden" name="document_id" value={documentId} />
           <input type="hidden" name="title" value={title.trim()} />
 
-          <div className="notion-property">
-            <label
-              htmlFor={`material-type-${documentId}`}
-              className="notion-property-label"
-            >
-              Тип
-            </label>
-            <div className="notion-property-value">
-              <MaterialTypeSelect
-                id={`material-type-${documentId}`}
-                name="material_type"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="notion-property notion-property-optional">
-            <label
-              htmlFor={`material-url-${documentId}`}
-              className="notion-property-label"
-            >
-              <span className="notion-property-label-primary">URL / путь</span>
-              <span className="notion-property-optional-tag">необязательно</span>
-            </label>
-            <div className="notion-property-value">
-              <input
-                id={`material-url-${documentId}`}
-                name="file_url_or_path"
-                type="text"
-                placeholder="https://…"
-              />
-            </div>
-          </div>
+          <MaterialCreateProperties idSuffix={documentId} />
 
           <div className="notion-property notion-property-optional notion-property-textarea material-content-block">
             <label
