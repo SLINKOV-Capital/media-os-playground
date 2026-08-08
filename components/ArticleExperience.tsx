@@ -2,6 +2,7 @@
 
 import type { DemoTerm } from "@/lib/demoArticle";
 import { extractMarkdownToc, slugifyHeading } from "@/lib/demoArticle";
+import { MarkdownContent } from "@/components/MarkdownContent";
 import Link from "next/link";
 import {
   Children,
@@ -16,8 +17,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
-import Markdown, { type Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
+import type { Components } from "react-markdown";
 
 export type ArticleLang = "ru" | "en" | "es";
 
@@ -169,6 +169,13 @@ export function ArticleExperience({
   const activeTerm =
     terms.find((t) => t.id === activeTermId) ?? terms[0] ?? null;
   const highlight = lang === "ru" ? terms : [];
+  const showToolbar = Boolean(
+    videoYoutubeId ||
+      hasAudio ||
+      hasPresentation ||
+      contents.en.trim() ||
+      contents.es.trim()
+  );
 
   const openTerm = (term: DemoTerm) => {
     setActiveTermId(term.id);
@@ -396,8 +403,13 @@ export function ArticleExperience({
           <h1 className="public-article-title">{title}</h1>
           {preview ? <p className="public-article-preview">{preview}</p> : null}
 
-          <div className="public-article-toolbar" role="toolbar" aria-label="Форматы и язык">
-            <div className="public-article-toolbar-left">
+          {showToolbar ? (
+            <div
+              className="public-article-toolbar"
+              role="toolbar"
+              aria-label="Форматы и язык"
+            >
+              <div className="public-article-toolbar-left">
               {videoYoutubeId ? (
                 <button
                   type="button"
@@ -431,9 +443,9 @@ export function ArticleExperience({
                   <IconSlides />
                 </button>
               ) : null}
-            </div>
+              </div>
 
-            <div className="public-article-toolbar-right">
+              <div className="public-article-toolbar-right">
               {contents.en.trim() ? (
                 <button
                   type="button"
@@ -471,8 +483,9 @@ export function ArticleExperience({
                   RU
                 </button>
               ) : null}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {videoOpen && videoYoutubeId ? (
             <div className="public-article-video">
@@ -491,11 +504,11 @@ export function ArticleExperience({
             </div>
           ) : null}
 
-          <div className="public-article-content markdown-content">
-            <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {markdown}
-            </Markdown>
-          </div>
+          <MarkdownContent
+            content={markdown}
+            className="public-article-content markdown-content"
+            components={markdownComponents}
+          />
 
           {materials}
         </article>

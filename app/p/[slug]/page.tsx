@@ -180,38 +180,26 @@ export default async function PublicDocumentPage({
   return (
     <PublicSiteShell>
       <div className="public-article-page">
-        {article.richDemo ? (
-          <ArticleExperience
-            title={article.title}
-            preview={article.preview}
-            cover={cover}
-            breadcrumb={breadcrumb}
-            contents={{
-              ru: DEMO_ARTICLE.content_md,
-              en: DEMO_ARTICLE.content_md_en,
-              es: DEMO_ARTICLE.content_md_es,
-            }}
-            terms={DEMO_TERMS}
-            videoYoutubeId={DEMO_ARTICLE.videoYoutubeId}
-            hasAudio
-            hasPresentation
-            materials={materialsBlock}
-          />
-        ) : (
-          <article className="public-article">
-            {breadcrumb}
-            {cover}
-            <h1 className="public-article-title">{article.title}</h1>
-            {article.preview ? (
-              <p className="public-article-preview">{article.preview}</p>
-            ) : null}
-            <MarkdownContent
-              content={article.content_md}
-              className="public-article-content markdown-content"
-            />
-            {materialsBlock}
-          </article>
-        )}
+        <ArticleExperience
+          title={article.title}
+          preview={article.preview}
+          cover={cover}
+          breadcrumb={breadcrumb}
+          contents={
+            article.richDemo
+              ? {
+                  ru: DEMO_ARTICLE.content_md,
+                  en: DEMO_ARTICLE.content_md_en,
+                  es: DEMO_ARTICLE.content_md_es,
+                }
+              : { ru: article.content_md, en: "", es: "" }
+          }
+          terms={article.richDemo ? DEMO_TERMS : []}
+          videoYoutubeId={article.richDemo ? DEMO_ARTICLE.videoYoutubeId : null}
+          hasAudio={article.richDemo}
+          hasPresentation={article.richDemo}
+          materials={materialsBlock}
+        />
 
         <RecommendedArticles items={article.related} />
       </div>
