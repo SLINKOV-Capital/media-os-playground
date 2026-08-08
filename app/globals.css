@@ -395,7 +395,7 @@ a {
 }
 
 .collection-header-materials {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, 1fr) max-content;
 }
 
 .collection-row {
@@ -504,7 +504,7 @@ a {
 }
 
 .collection-row-materials {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: 56px minmax(0, 1fr) max-content;
 }
 
 .collection-row-materials:hover {
@@ -516,6 +516,13 @@ a {
   align-items: center;
   gap: 10px;
   min-width: 0;
+}
+
+.collection-material-type {
+  justify-self: end;
+  color: var(--text-muted);
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .material-type-icon {

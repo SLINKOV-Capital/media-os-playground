@@ -4,6 +4,7 @@ import type { ActionResult } from "@/lib/actionResult";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { isValidMaterialType } from "@/lib/materialTypes";
 import { deriveMaterialPreviewUrl } from "@/lib/materialPreview";
+import { importCloudMailImagePreview } from "@/lib/materialPreviewImport";
 import { slugifyTitle, withSlugSuffix } from "@/lib/slugify";
 import { getMaterialPreviewPublicUrl } from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/server";
@@ -694,7 +695,19 @@ export async function updateMaterial(
       current.file_url_or_path
     );
 
-    if (nextPreviewUrl) {
+    const importedPreviewUrl =
+      nextType === "image" && !nextPreviewUrl
+        ? await importCloudMailImagePreview({
+            supabase,
+            userId: user.id,
+            materialId: id,
+            fileUrlOrPath: nextFileUrl,
+          })
+        : null;
+
+    if (importedPreviewUrl) {
+      updates.preview_url = importedPreviewUrl;
+    } else if (nextPreviewUrl) {
       updates.preview_url = nextPreviewUrl;
     } else if (
       current.preview_url &&
@@ -1711,6 +1724,27 @@ export async function createMaterial(formData: FormData): Promise<void> {
 
     console.error("Failed to create material:", materialError?.message);
     return;
+  }
+
+  if (material_type === "image" && !preview_url) {
+    const importedPreviewUrl = await importCloudMailImagePreview({
+      supabase,
+      userId: user.id,
+      materialId: material.id,
+      fileUrlOrPath: file_url_or_path,
+    });
+
+    if (importedPreviewUrl) {
+      const { error: previewError } = await supabase
+        .from("materials")
+        .update({ preview_url: importedPreviewUrl })
+        .eq("id", material.id)
+        .eq("user_id", user.id);
+
+      if (previewError) {
+        console.error("Failed to save imported material preview:", previewError.message);
+      }
+    }
   }
 
   const linked = await linkDocumentMaterialRecord(

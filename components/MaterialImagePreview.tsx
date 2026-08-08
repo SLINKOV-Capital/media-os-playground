@@ -28,6 +28,7 @@ export function MaterialImagePreview({
       className={`material-image-preview material-image-preview--${variant}${className ? ` ${className}` : ""}`}
       loading="lazy"
       decoding="async"
+      referrerPolicy="no-referrer"
       onError={() => setHidden(true)}
     />
   );

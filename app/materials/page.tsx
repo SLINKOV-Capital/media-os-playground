@@ -4,6 +4,7 @@ import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import {
   getMaterialTypeIcon,
+  getMaterialTypeLabel,
   MATERIAL_TYPES,
 } from "@/lib/materialTypes";
 import { getMaterialPreviewSrc } from "@/lib/materialPreview";
@@ -129,7 +130,9 @@ export default async function MaterialsPage({
               className="collection-header collection-header-materials"
               aria-hidden="true"
             >
+              <span aria-hidden="true" />
               <span>Название</span>
+              <span>Тип</span>
             </div>
             {materials.map((material) => {
               const previewSrc = getMaterialPreviewSrc(material);
@@ -142,21 +145,24 @@ export default async function MaterialsPage({
                   previewSrc ? " has-image-preview" : ""
                 }`}
               >
+                <span className="collection-material-leading">
+                  {previewSrc ? (
+                    <MaterialImagePreview
+                      src={previewSrc}
+                      alt={material.title}
+                      variant="list"
+                    />
+                  ) : (
+                    <span className="material-type-icon" aria-hidden="true">
+                      {getMaterialTypeIcon(material.material_type)}
+                    </span>
+                  )}
+                </span>
                 <span className="collection-primary collection-primary-material">
-                  <span className="collection-material-leading">
-                    {previewSrc ? (
-                      <MaterialImagePreview
-                        src={previewSrc}
-                        alt={material.title}
-                        variant="list"
-                      />
-                    ) : (
-                      <span className="material-type-icon" aria-hidden="true">
-                        {getMaterialTypeIcon(material.material_type)}
-                      </span>
-                    )}
-                  </span>
                   {material.title}
+                </span>
+                <span className="collection-material-type">
+                  {getMaterialTypeLabel(material.material_type)}
                 </span>
               </Link>
             );
