@@ -525,6 +525,51 @@ a {
   white-space: nowrap;
 }
 
+.collection-material-type span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  font-size: 16px;
+}
+
+.material-url-link {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1.4;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.material-url-link:hover {
+  text-decoration: underline;
+}
+
+.material-delete-section {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.material-delete-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #c04543;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.material-delete-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
 .material-type-icon {
   flex-shrink: 0;
   width: 1.25rem;
@@ -5568,8 +5613,9 @@ select.form-field-control {
 
 .material-url-field {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
 }
 
 .material-url-field input {

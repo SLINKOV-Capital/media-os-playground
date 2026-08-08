@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 
 type MaterialImagePreviewProps = {
   src: string;
   alt?: string;
   variant?: "card" | "thumb" | "list";
   className?: string;
+  fallback?: ReactNode;
 };
 
 export function MaterialImagePreview({
@@ -14,11 +16,16 @@ export function MaterialImagePreview({
   alt = "",
   variant = "card",
   className = "",
+  fallback = null,
 }: MaterialImagePreviewProps) {
   const [hidden, setHidden] = useState(false);
 
+  useEffect(() => {
+    setHidden(false);
+  }, [src]);
+
   if (!src.trim() || hidden) {
-    return null;
+    return fallback;
   }
 
   return (

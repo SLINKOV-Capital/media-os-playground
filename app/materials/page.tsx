@@ -53,11 +53,14 @@ export default async function MaterialsPage({
 
   const materials = await Promise.all(
     ((data ?? []) as Material[]).map(async (material) => {
-      const hasStoredPreview = material.preview_url?.includes(
-        "/storage/v1/object/public/material-previews/"
+      const hasCorrectlyNamedImportedPreview = /\/preview\.(?:gif|jpg|png)$/i.test(
+        material.preview_url ?? ""
       );
 
-      if (material.material_type !== "image" || hasStoredPreview) {
+      if (
+        material.material_type !== "image" ||
+        hasCorrectlyNamedImportedPreview
+      ) {
         return material;
       }
 
@@ -189,6 +192,11 @@ export default async function MaterialsPage({
                       src={previewSrc}
                       alt={material.title}
                       variant="list"
+                      fallback={
+                        <span className="material-type-icon" aria-hidden="true">
+                          {getMaterialTypeIcon(material.material_type)}
+                        </span>
+                      }
                     />
                   ) : (
                     <span className="material-type-icon" aria-hidden="true">
@@ -200,7 +208,12 @@ export default async function MaterialsPage({
                   {material.title}
                 </span>
                 <span className="collection-material-type">
-                  {getMaterialTypeLabel(material.material_type)}
+                  <span
+                    aria-label={getMaterialTypeLabel(material.material_type)}
+                    title={getMaterialTypeLabel(material.material_type)}
+                  >
+                    {getMaterialTypeIcon(material.material_type)}
+                  </span>
                 </span>
               </Link>
             );

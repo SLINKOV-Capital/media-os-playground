@@ -1,15 +1,28 @@
 export const MATERIAL_PREVIEWS_BUCKET = "material-previews";
 
-export function materialPreviewStoragePath(userId: string, materialId: string) {
-  return `${userId}/${materialId}/preview.webp`;
+export type MaterialPreviewExtension = "gif" | "jpg" | "png" | "webp";
+
+export function materialPreviewStoragePath(
+  userId: string,
+  materialId: string,
+  extension: MaterialPreviewExtension = "webp"
+) {
+  return `${userId}/${materialId}/preview.${extension}`;
 }
 
 export function getMaterialPreviewPublicUrl(
   supabaseUrl: string,
   userId: string,
-  materialId: string
+  materialId: string,
+  extension: MaterialPreviewExtension = "webp"
 ) {
-  const path = materialPreviewStoragePath(userId, materialId);
+  const path = materialPreviewStoragePath(userId, materialId, extension);
   const base = supabaseUrl.replace(/\/$/, "");
   return `${base}/storage/v1/object/public/${MATERIAL_PREVIEWS_BUCKET}/${path}`;
+}
+
+export function materialPreviewStoragePaths(userId: string, materialId: string) {
+  return (["gif", "jpg", "png", "webp"] as const).map((extension) =>
+    materialPreviewStoragePath(userId, materialId, extension)
+  );
 }

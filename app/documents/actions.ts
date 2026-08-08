@@ -6,7 +6,11 @@ import { isValidMaterialType } from "@/lib/materialTypes";
 import { deriveMaterialPreviewUrl } from "@/lib/materialPreview";
 import { importCloudMailImagePreview } from "@/lib/materialPreviewImport";
 import { slugifyTitle, withSlugSuffix } from "@/lib/slugify";
-import { getMaterialPreviewPublicUrl } from "@/lib/storagePaths";
+import {
+  getMaterialPreviewPublicUrl,
+  MATERIAL_PREVIEWS_BUCKET,
+  materialPreviewStoragePaths,
+} from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -754,7 +758,7 @@ export async function setMaterialPreviewUrl(
 
   const { data: material, error: materialError } = await supabase
     .from("materials")
-    .select("id, material_type")
+    .select("id")
     .eq("id", materialId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -762,10 +766,6 @@ export async function setMaterialPreviewUrl(
   if (materialError || !material) {
     console.error("Failed to fetch material for preview:", materialError?.message);
     return { ok: false, error: "not_found" };
-  }
-
-  if (material.material_type !== "image") {
-    return { ok: false, error: "invalid_type" };
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -793,6 +793,56 @@ export async function setMaterialPreviewUrl(
   }
 
   await revalidateMaterialPublicSites(supabase, materialId);
+  return { ok: true };
+}
+
+export async function deleteMaterial(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(COCKPIT_LOGIN_PATH);
+  }
+
+  const materialId = String(formData.get("id") ?? "");
+
+  if (!materialId) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { data: material, error: materialError } = await supabase
+    .from("materials")
+    .select("id")
+    .eq("id", materialId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (materialError || !material) {
+    return { ok: false, error: "not_found" };
+  }
+
+  const { error: deleteError } = await supabase
+    .from("materials")
+    .delete()
+    .eq("id", materialId)
+    .eq("user_id", user.id);
+
+  if (deleteError) {
+    console.error("Failed to delete material:", deleteError.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  const { error: storageError } = await supabase.storage
+    .from(MATERIAL_PREVIEWS_BUCKET)
+    .remove(materialPreviewStoragePaths(user.id, materialId));
+
+  if (storageError) {
+    console.error("Failed to delete material previews:", storageError.message);
+  }
+
+  revalidatePath("/materials");
   return { ok: true };
 }
 

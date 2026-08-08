@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { PageTitle } from "@/components/PageTitle";
 import { MaterialDocumentsSection } from "@/components/MaterialDocumentsSection";
 import { MaterialPropertiesEditor } from "@/components/MaterialPropertiesEditor";
+import { DeleteMaterialButton } from "@/components/DeleteMaterialButton";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -163,6 +164,8 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
             linkedDocuments={linkedDocuments}
             availableDocuments={availableDocuments}
           />
+
+          <DeleteMaterialButton materialId={material.id} />
         </div>
       </div>
     </AppShell>

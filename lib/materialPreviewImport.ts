@@ -2,6 +2,7 @@ import type { createClient } from "@/lib/supabase/server";
 import {
   getMaterialPreviewPublicUrl,
   MATERIAL_PREVIEWS_BUCKET,
+  type MaterialPreviewExtension,
   materialPreviewStoragePath,
 } from "@/lib/storagePaths";
 
@@ -12,6 +13,12 @@ const ALLOWED_CONTENT_TYPES = new Set([
   "image/png",
   "image/webp",
 ]);
+const CONTENT_TYPE_EXTENSIONS: Record<string, MaterialPreviewExtension> = {
+  "image/gif": "gif",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -135,7 +142,13 @@ export async function importCloudMailImagePreview({
       return null;
     }
 
-    const path = materialPreviewStoragePath(userId, materialId);
+    const extension = CONTENT_TYPE_EXTENSIONS[contentType];
+
+    if (!extension) {
+      return null;
+    }
+
+    const path = materialPreviewStoragePath(userId, materialId, extension);
     const { error: uploadError } = await supabase.storage
       .from(MATERIAL_PREVIEWS_BUCKET)
       .upload(path, bytes, {
@@ -152,7 +165,12 @@ export async function importCloudMailImagePreview({
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
     return supabaseUrl
-      ? getMaterialPreviewPublicUrl(supabaseUrl, userId, materialId)
+      ? getMaterialPreviewPublicUrl(
+          supabaseUrl,
+          userId,
+          materialId,
+          extension
+        )
       : null;
   } catch (error) {
     console.error("Failed to fetch Mail.ru material preview:", error);

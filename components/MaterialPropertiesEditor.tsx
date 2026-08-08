@@ -111,7 +111,6 @@ export function MaterialPropertiesEditor({
         <div className="notion-property-value">
           <MaterialUrlField
             id={`material-url-${material.id}`}
-            materialType={materialType}
             initialValue={material.file_url_or_path ?? ""}
             disabled={isPending}
             onBlur={(value) => saveField("file_url_or_path", value)}
@@ -121,7 +120,6 @@ export function MaterialPropertiesEditor({
 
       <MaterialPreviewUpload
         materialId={material.id}
-        materialType={materialType}
         previewUrl={material.preview_url}
         title={material.title}
       />

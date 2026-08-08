@@ -45,7 +45,6 @@ export function MaterialCreateProperties({
           <MaterialUrlField
             id={urlId}
             name="file_url_or_path"
-            materialType={materialType}
           />
         </div>
       </div>

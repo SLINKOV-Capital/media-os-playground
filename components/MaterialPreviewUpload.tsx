@@ -2,7 +2,10 @@
 
 import { setMaterialPreviewUrl } from "@/app/documents/actions";
 import { MaterialImagePreview } from "@/components/MaterialImagePreview";
-import { resizeImageToWebp } from "@/lib/materialPreviewResize";
+import {
+  MAX_PREVIEW_INPUT_BYTES,
+  resizeImageToWebp,
+} from "@/lib/materialPreviewResize";
 import {
   getMaterialPreviewPublicUrl,
   MATERIAL_PREVIEWS_BUCKET,
@@ -14,14 +17,12 @@ import { useEffect, useRef, useState, useTransition } from "react";
 
 type MaterialPreviewUploadProps = {
   materialId: string;
-  materialType: string;
   previewUrl: string | null;
   title: string;
 };
 
 export function MaterialPreviewUpload({
   materialId,
-  materialType,
   previewUrl: initialPreviewUrl,
   title,
 }: MaterialPreviewUploadProps) {
@@ -36,10 +37,6 @@ export function MaterialPreviewUpload({
     setPreviewUrl(initialPreviewUrl);
   }, [initialPreviewUrl]);
 
-  if (materialType !== "image") {
-    return null;
-  }
-
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -50,6 +47,11 @@ export function MaterialPreviewUpload({
 
     if (!file.type.startsWith("image/")) {
       setError("Выберите файл изображения");
+      return;
+    }
+
+    if (file.size > MAX_PREVIEW_INPUT_BYTES) {
+      setError("Файл слишком большой. Максимум — 20 МБ");
       return;
     }
 

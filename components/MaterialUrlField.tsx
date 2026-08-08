@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { MaterialTypeValue } from "@/lib/materialTypes";
 
 type MaterialUrlFieldProps = {
   id: string;
-  materialType: MaterialTypeValue;
   name?: string;
   initialValue?: string;
   disabled?: boolean;
@@ -14,13 +12,16 @@ type MaterialUrlFieldProps = {
 
 export function MaterialUrlField({
   id,
-  materialType,
   name,
   initialValue = "",
   disabled = false,
   onBlur,
 }: MaterialUrlFieldProps) {
   const [value, setValue] = useState(initialValue);
+  const trimmedValue = value.trim();
+  const isObsidianUrl = trimmedValue.startsWith("obsidian://");
+  const isWebUrl = /^https?:\/\//i.test(trimmedValue);
+  const isClickable = isObsidianUrl || isWebUrl;
 
   return (
     <div className="material-url-field">
@@ -34,13 +35,15 @@ export function MaterialUrlField({
         onChange={(event) => setValue(event.target.value)}
         onBlur={(event) => onBlur?.(event.target.value)}
       />
-      {materialType === "obsidian" && (
+      {isClickable && (
         <a
-          className="ghost-button"
-          href={value || undefined}
-          aria-disabled={value ? undefined : true}
+          className="material-url-link"
+          href={trimmedValue}
+          target={isWebUrl ? "_blank" : undefined}
+          rel={isWebUrl ? "noopener noreferrer" : undefined}
+          title={trimmedValue}
         >
-          Открыть в Obsidian
+          {trimmedValue}
         </a>
       )}
     </div>

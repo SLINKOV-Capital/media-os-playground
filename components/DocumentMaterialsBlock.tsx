@@ -35,6 +35,9 @@ export function DocumentMaterialsBlock({
         <ul className="material-rows">
           {materials.map((material) => {
             const previewSrc = getMaterialPreviewSrc(material);
+            const materialUrl = material.file_url_or_path?.trim() ?? "";
+            const isObsidianUrl = materialUrl.startsWith("obsidian://");
+            const isWebUrl = /^https?:\/\//i.test(materialUrl);
 
             return (
               <li
@@ -47,6 +50,14 @@ export function DocumentMaterialsBlock({
                       src={previewSrc}
                       alt={material.title}
                       variant="thumb"
+                      fallback={
+                        <span
+                          className="material-type-icon material-type-icon-thumb"
+                          aria-hidden="true"
+                        >
+                          {getMaterialTypeIcon(material.material_type)}
+                        </span>
+                      }
                     />
                   ) : (
                     <span className="material-type-icon material-type-icon-thumb">
@@ -71,9 +82,20 @@ export function DocumentMaterialsBlock({
                         <span className="material-row-sep" aria-hidden="true">
                           ·
                         </span>
-                        <span className="material-row-url">
-                          {material.file_url_or_path}
-                        </span>
+                        {isObsidianUrl || isWebUrl ? (
+                          <a
+                            className="material-row-url"
+                            href={materialUrl}
+                            target={isWebUrl ? "_blank" : undefined}
+                            rel={isWebUrl ? "noopener noreferrer" : undefined}
+                          >
+                            {material.file_url_or_path}
+                          </a>
+                        ) : (
+                          <span className="material-row-url">
+                            {material.file_url_or_path}
+                          </span>
+                        )}
                       </>
                     )}
                   </div>
