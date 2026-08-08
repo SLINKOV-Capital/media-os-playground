@@ -3,6 +3,7 @@
 import type { ActionResult } from "@/lib/actionResult";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { isValidMaterialType } from "@/lib/materialTypes";
+import { deriveMaterialPreviewUrl } from "@/lib/materialPreview";
 import { slugifyTitle, withSlugSuffix } from "@/lib/slugify";
 import { getMaterialPreviewPublicUrl } from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/server";
@@ -639,6 +640,7 @@ export async function updateMaterial(
     material_type?: string;
     file_url_or_path?: string | null;
     notes?: string | null;
+    preview_url?: string | null;
   } = {};
 
   if (formData.has("material_type")) {
@@ -661,6 +663,45 @@ export async function updateMaterial(
   if (formData.has("notes")) {
     const notes = String(formData.get("notes") ?? "").trim();
     updates.notes = notes || null;
+  }
+
+  if (
+    formData.has("material_type") ||
+    formData.has("file_url_or_path")
+  ) {
+    const { data: current, error: currentError } = await supabase
+      .from("materials")
+      .select("material_type, file_url_or_path, preview_url")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (currentError || !current) {
+      console.error(
+        "Failed to fetch material preview source:",
+        currentError?.message
+      );
+      return { ok: false, error: "not_found" };
+    }
+
+    const nextType = updates.material_type ?? current.material_type;
+    const nextFileUrl = Object.hasOwn(updates, "file_url_or_path")
+      ? updates.file_url_or_path
+      : current.file_url_or_path;
+    const nextPreviewUrl = deriveMaterialPreviewUrl(nextType, nextFileUrl);
+    const previousAutoPreviewUrl = deriveMaterialPreviewUrl(
+      current.material_type,
+      current.file_url_or_path
+    );
+
+    if (nextPreviewUrl) {
+      updates.preview_url = nextPreviewUrl;
+    } else if (
+      current.preview_url &&
+      current.preview_url === previousAutoPreviewUrl
+    ) {
+      updates.preview_url = null;
+    }
   }
 
   if (Object.keys(updates).length === 0) {
@@ -1586,6 +1627,11 @@ export async function createMaterial(formData: FormData): Promise<void> {
     return;
   }
 
+  const preview_url = deriveMaterialPreviewUrl(
+    material_type,
+    file_url_or_path
+  );
+
   const { data: document, error: documentError } = await supabase
     .from("documents")
     .select("id")
@@ -1637,6 +1683,7 @@ export async function createMaterial(formData: FormData): Promise<void> {
       material_type,
       file_url_or_path: file_url_or_path || null,
       notes: notes || null,
+      preview_url,
     })
     .select("id")
     .single();
