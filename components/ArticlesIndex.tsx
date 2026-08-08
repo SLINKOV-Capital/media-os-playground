@@ -1,13 +1,14 @@
 import { PublicSiteShell } from "@/components/PublicSiteShell";
-import type { PublicSection } from "@/lib/publicContent";
+import type { PlaceholderItem, PublicSection } from "@/lib/publicContent";
 import Image from "next/image";
 import Link from "next/link";
 
 type ArticlesIndexProps = {
   section: PublicSection;
+  items?: PlaceholderItem[];
 };
 
-export function ArticlesIndex({ section }: ArticlesIndexProps) {
+export function ArticlesIndex({ section, items = section.items }: ArticlesIndexProps) {
   return (
     <PublicSiteShell>
       <div className="public-articles">
@@ -19,7 +20,7 @@ export function ArticlesIndex({ section }: ArticlesIndexProps) {
         </header>
 
         <ul className="public-articles-list">
-          {section.items.map((item) => {
+          {items.map((item) => {
             const href = item.href ?? `/p/${item.slug}`;
 
             return (
@@ -45,6 +46,10 @@ export function ArticlesIndex({ section }: ArticlesIndexProps) {
             );
           })}
         </ul>
+
+        {items.length === 0 ? (
+          <p className="public-lead">Здесь скоро появятся новые статьи.</p>
+        ) : null}
       </div>
     </PublicSiteShell>
   );

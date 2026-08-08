@@ -1,5 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { LATEST_PUBLISHED_LIMIT } from "@/lib/site";
+import {
+  LATEST_PUBLISHED_LIMIT,
+  publicDocumentSection,
+  type PublicDocumentSection,
+} from "@/lib/site";
 import type { Material, PublicDocument } from "@/lib/types";
 import { mapDocumentMaterialsFromRows } from "@/lib/mapDocumentMaterials";
 
@@ -41,6 +45,29 @@ export async function fetchLatestPublishedDocuments(): Promise<PublicDocument[]>
   }
 
   return (data ?? []) as PublicDocument[];
+}
+
+export async function fetchPublishedDocumentsBySection(
+  section: Exclude<PublicDocumentSection, null>
+): Promise<PublicDocument[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("documents")
+    .select(
+      "id, title, document_type, preview, content_md, site_slug, site_published_at, site_featured"
+    )
+    .eq("site_status", "published")
+    .order("site_published_at", { ascending: false });
+
+  if (error) {
+    console.error(`Failed to fetch published ${section}:`, error.message);
+    return [];
+  }
+
+  return ((data ?? []) as PublicDocument[]).filter(
+    (document) => publicDocumentSection(document.document_type) === section
+  );
 }
 
 export async function fetchPublishedDocumentBySlug(

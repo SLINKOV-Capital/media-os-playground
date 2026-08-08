@@ -93,7 +93,16 @@ export function DocumentSiteBlock({ document }: DocumentSiteBlockProps) {
     runAction(async () => {
       const formData = new FormData();
       formData.set("id", document.id);
-      return publishDocument(formData);
+      formData.set("preview", preview);
+      formData.set("content_md", contentMd);
+      const result = await publishDocument(formData);
+
+      if (result.ok) {
+        lastSavedPreview.current = preview;
+        lastSavedContent.current = contentMd;
+      }
+
+      return result;
     });
   }
 
@@ -135,9 +144,9 @@ export function DocumentSiteBlock({ document }: DocumentSiteBlockProps) {
 
       {publicUrl && (
         <p className="doc-site-url">
-          Публичный URL:{" "}
+          Опубликовано:{" "}
           <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-            {publicUrl}
+            Открыть как читатель ↗
           </a>
         </p>
       )}

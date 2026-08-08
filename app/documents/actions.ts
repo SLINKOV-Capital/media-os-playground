@@ -17,6 +17,8 @@ import { redirect } from "next/navigation";
 
 function revalidateSitePaths(slug?: string | null) {
   revalidatePath("/");
+  revalidatePath("/articles");
+  revalidatePath("/stories");
 
   if (slug) {
     revalidatePath(`/p/${slug}`);
@@ -417,9 +419,15 @@ export async function publishDocument(
   }
 
   const id = String(formData.get("id") ?? "");
+  const preview = String(formData.get("preview") ?? "").trim();
+  const content_md = String(formData.get("content_md") ?? "").trim();
 
   if (!id) {
     return { ok: false, error: "not_found" };
+  }
+
+  if (!content_md) {
+    return { ok: false, error: "empty_content" };
   }
 
   const document = await getOwnedDocument(supabase, user.id, id);
@@ -444,6 +452,8 @@ export async function publishDocument(
   const { error } = await supabase
     .from("documents")
     .update({
+      preview: preview || null,
+      content_md,
       site_status: "published",
       site_slug,
       site_published_at: publishedAt,

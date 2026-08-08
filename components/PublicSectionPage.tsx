@@ -1,11 +1,12 @@
 import { PublicSiteShell } from "@/components/PublicSiteShell";
 import { PublicWorkCard, workFromPlaceholder } from "@/components/PublicWorkCard";
-import type { PublicSection } from "@/lib/publicContent";
+import type { PlaceholderItem, PublicSection } from "@/lib/publicContent";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 type PublicSectionPageProps = {
   section: PublicSection;
+  items?: PlaceholderItem[];
 };
 
 export function publicSectionMetadata(section: PublicSection): Metadata {
@@ -15,7 +16,10 @@ export function publicSectionMetadata(section: PublicSection): Metadata {
   };
 }
 
-export function PublicSectionPage({ section }: PublicSectionPageProps) {
+export function PublicSectionPage({
+  section,
+  items = section.items,
+}: PublicSectionPageProps) {
   return (
     <PublicSiteShell>
       <div className="public-page">
@@ -24,7 +28,7 @@ export function PublicSectionPage({ section }: PublicSectionPageProps) {
         <p className="public-lead">{section.intro}</p>
 
         <ul className="public-item-list">
-          {section.items.map((item) => {
+          {items.map((item) => {
             const work = workFromPlaceholder(item, section.path);
 
             return (
@@ -39,8 +43,12 @@ export function PublicSectionPage({ section }: PublicSectionPageProps) {
           })}
         </ul>
 
+        {items.length === 0 ? (
+          <p className="public-lead">Здесь скоро появятся новые рассказы.</p>
+        ) : null}
+
         <div className="public-works-grid public-works-grid-compact">
-          {section.items.map((item, index) => (
+          {items.map((item, index) => (
             <PublicWorkCard
               key={item.slug}
               {...workFromPlaceholder(item, section.path)}

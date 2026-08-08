@@ -5,6 +5,24 @@ export function publicDocumentPath(slug: string): string {
   return `/p/${slug}`;
 }
 
+export type PublicDocumentSection = "articles" | "stories" | null;
+
+export function publicDocumentSection(
+  documentType: string
+): PublicDocumentSection {
+  const normalized = documentType.trim().toLowerCase();
+
+  if (normalized.includes("стат")) {
+    return "articles";
+  }
+
+  if (normalized.includes("рассказ") || normalized.includes("истор")) {
+    return "stories";
+  }
+
+  return null;
+}
+
 export function isDocumentSiteLocked(document: {
   site_published_at: string | null;
 }): boolean {

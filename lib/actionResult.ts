@@ -6,6 +6,7 @@ export type ActionResult =
         | "duplicate_title"
         | "duplicate_type"
         | "empty"
+        | "empty_content"
         | "last_document"
         | "invalid_type"
         | "not_found"
@@ -21,6 +22,7 @@ export const ACTION_ERROR_MESSAGES: Record<
   duplicate_title: "Такое название уже существует",
   duplicate_type: "Такой тип документа уже существует",
   empty: "Название не может быть пустым",
+  empty_content: "Добавьте текст перед публикацией",
   last_document: "Нельзя оставить материал без документов",
   invalid_type: "Выберите тип из существующих шаблонов",
   not_found: "Не найдено",

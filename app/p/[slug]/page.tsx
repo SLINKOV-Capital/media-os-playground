@@ -10,6 +10,7 @@ import {
 } from "@/lib/demoArticle";
 import { getMaterialTypeIcon } from "@/lib/materialTypes";
 import { getMaterialPreviewSrc } from "@/lib/materialPreview";
+import { publicDocumentSection } from "@/lib/site";
 import {
   fetchPublishedDocumentBySlug,
   fetchPublishedDocumentMaterials,
@@ -79,7 +80,7 @@ async function resolveArticle(slug: string): Promise<ArticleView | null> {
   if (!document) return null;
 
   const materials = await fetchPublishedDocumentMaterials(document.id);
-  const isArticle = document.document_type.toLowerCase().includes("стат");
+  const section = publicDocumentSection(document.document_type);
 
   return {
     title: document.title,
@@ -89,8 +90,10 @@ async function resolveArticle(slug: string): Promise<ArticleView | null> {
     document_type: document.document_type,
     materials,
     related: [],
-    backHref: isArticle ? "/articles" : "/",
-    backLabel: isArticle ? "Статьи" : "На главную",
+    backHref:
+      section === "articles" ? "/articles" : section === "stories" ? "/stories" : "/",
+    backLabel:
+      section === "articles" ? "Статьи" : section === "stories" ? "Рассказы" : "На главную",
     richDemo: false,
   };
 }
