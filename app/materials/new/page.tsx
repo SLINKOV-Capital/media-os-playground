@@ -8,7 +8,13 @@ import type { Document } from "@/lib/types";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export default async function NewMaterialPage() {
+type NewMaterialPageProps = {
+  searchParams: Promise<{ document_id?: string; action_id?: string }>;
+};
+
+export default async function NewMaterialPage({ searchParams }: NewMaterialPageProps) {
+  const { document_id: requestedDocumentId, action_id: actionId } =
+    await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -51,7 +57,12 @@ export default async function NewMaterialPage() {
             </div>
           ) : (
             <form action={createMaterial} className="notion-form notion-form-page">
-              <input type="hidden" name="redirect" value="materials" />
+              <input
+                type="hidden"
+                name="redirect"
+                value={requestedDocumentId ? "document" : "materials"}
+              />
+              {actionId && <input type="hidden" name="action_id" value={actionId} />}
 
               <div className="notion-property">
                 <label htmlFor="document_id" className="notion-property-label">
@@ -62,7 +73,7 @@ export default async function NewMaterialPage() {
                     id="document_id"
                     name="document_id"
                     required
-                    defaultValue=""
+                    defaultValue={requestedDocumentId ?? ""}
                   >
                     <option value="" disabled>
                       Выберите документ
@@ -115,7 +126,10 @@ export default async function NewMaterialPage() {
                 <button type="submit" className="primary-button">
                   Создать материал
                 </button>
-                <Link href="/materials" className="text-link">
+                <Link
+                  href={requestedDocumentId ? `/documents/${requestedDocumentId}` : "/materials"}
+                  className="text-link"
+                >
                   Отмена
                 </Link>
               </div>

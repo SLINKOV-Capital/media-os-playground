@@ -84,8 +84,6 @@ export type Action = {
   id: string;
   user_id: string;
   document_id: string;
-  /** @deprecated Use action_materials junction. Not written by new code. */
-  material_id: string | null;
   title: string;
   done: boolean;
   today: boolean;

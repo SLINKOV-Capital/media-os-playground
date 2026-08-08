@@ -509,9 +509,18 @@ export function ActionChecklistItem({
             )}
 
             {!hasDocumentMaterials ? (
-              <p className="checklist-materials-doc-empty">
-                В документе пока нет материалов. Добавьте материал ниже.
-              </p>
+              <div className="checklist-materials-doc-empty">
+                <p>В документе пока нет материалов.</p>
+                <Link
+                  href={`/materials/new?document_id=${encodeURIComponent(
+                    documentId
+                  )}&action_id=${encodeURIComponent(action.id)}`}
+                  className="text-link"
+                  onClick={stopRowToggle}
+                >
+                  Создать и привязать материал
+                </Link>
+              </div>
             ) : availableMaterials.length > 0 ? (
               <div className="checklist-attach-materials">
                 <p className="checklist-attach-label">+ Привязать материал</p>

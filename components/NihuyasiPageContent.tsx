@@ -270,6 +270,16 @@ export function NihuyasiPageContent({
     setTodayDate(formatLocalIsoDate());
   }, []);
 
+  useEffect(() => {
+    function handleQuickCreate(event: Event) {
+      const entry = (event as CustomEvent<NihuyasiEntry>).detail;
+      setEntries((current) => sortNihuyasiEntries([entry, ...current]));
+    }
+
+    window.addEventListener("nihuyasi:created", handleQuickCreate);
+    return () => window.removeEventListener("nihuyasi:created", handleQuickCreate);
+  }, []);
+
   const handleTextareaResize = useCallback(() => {
     resizeTextarea(textRef.current);
   }, []);

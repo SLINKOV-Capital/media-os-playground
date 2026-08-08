@@ -92,6 +92,39 @@ async function linkDocumentMaterialRecord(
   return true;
 }
 
+async function linkActionMaterialRecord(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  actionId: string,
+  documentId: string,
+  materialId: string,
+  userId: string
+) {
+  const { data: action, error: actionError } = await supabase
+    .from("actions")
+    .select("id")
+    .eq("id", actionId)
+    .eq("document_id", documentId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (actionError || !action) {
+    return false;
+  }
+
+  const { error } = await supabase.from("action_materials").insert({
+    action_id: actionId,
+    material_id: materialId,
+    user_id: userId,
+  });
+
+  if (error && error.code !== "23505") {
+    console.error("Failed to link new material to action:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
 async function findExistingMaterialByTitle(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
@@ -846,6 +879,89 @@ export async function deleteMaterial(formData: FormData): Promise<ActionResult> 
   return { ok: true };
 }
 
+export type BulkDeleteMaterialsResult =
+  | { ok: true; deletedIds: string[]; warning?: string }
+  | { ok: false; error: string; deletedIds?: string[] };
+
+export async function bulkDeleteMaterials(
+  requestedIds: string[]
+): Promise<BulkDeleteMaterialsResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, error: "Сессия истекла. Войдите снова." };
+  }
+
+  const ids = [...new Set(requestedIds.filter(Boolean))];
+
+  if (ids.length === 0 || ids.length > 500) {
+    return { ok: false, error: "Не выбраны материалы для удаления" };
+  }
+
+  const { data: ownedMaterials, error: selectError } = await supabase
+    .from("materials")
+    .select("id")
+    .eq("user_id", user.id)
+    .in("id", ids);
+
+  if (selectError) {
+    console.error("Failed to validate bulk material deletion:", selectError.message);
+    return { ok: false, error: "Не удалось проверить выбранные материалы" };
+  }
+
+  const ownedIds = (ownedMaterials ?? []).map((material) => material.id);
+
+  if (ownedIds.length !== ids.length) {
+    return {
+      ok: false,
+      error: "Часть выбранных материалов не найдена. Обновите список и повторите.",
+    };
+  }
+
+  const { data: deleted, error: deleteError } = await supabase
+    .from("materials")
+    .delete()
+    .eq("user_id", user.id)
+    .in("id", ownedIds)
+    .select("id");
+
+  if (deleteError) {
+    console.error("Failed to bulk delete materials:", deleteError.message);
+    return { ok: false, error: "Не удалось удалить выбранные материалы" };
+  }
+
+  const deletedIds = (deleted ?? []).map((material) => material.id);
+
+  if (deletedIds.length !== ownedIds.length) {
+    return {
+      ok: false,
+      error: `Удалено ${deletedIds.length} из ${ownedIds.length}. Обновите список перед повторной попыткой.`,
+      deletedIds,
+    };
+  }
+
+  const previewPaths = deletedIds.flatMap((materialId) =>
+    materialPreviewStoragePaths(user.id, materialId)
+  );
+  const { error: storageError } = await supabase.storage
+    .from(MATERIAL_PREVIEWS_BUCKET)
+    .remove(previewPaths);
+
+  revalidatePath("/materials");
+
+  return storageError
+    ? {
+        ok: true,
+        deletedIds,
+        warning:
+          "Материалы удалены, но часть файлов миниатюр не удалось удалить из Storage.",
+      }
+    : { ok: true, deletedIds };
+}
+
 export async function createDocument(formData: FormData): Promise<void> {
   const supabase = await createClient();
   const {
@@ -1026,7 +1142,6 @@ export async function generateActions(formData: FormData): Promise<void> {
     user_id: user.id,
     document_id: documentId,
     title,
-    material_id: null,
     done: false,
     today: false,
     sort_order: index,
@@ -1046,21 +1161,38 @@ export async function generateActions(formData: FormData): Promise<void> {
   revalidateDocument(documentId);
 }
 
-export async function createAction(formData: FormData): Promise<void> {
+export type CreateActionResult =
+  | { ok: true; action: import("@/lib/types").Action }
+  | { ok: false; error: string };
+
+export async function createAction(
+  formData: FormData
+): Promise<CreateActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(COCKPIT_LOGIN_PATH);
+    return { ok: false, error: "Сессия истекла. Войдите снова." };
   }
 
   const documentId = String(formData.get("document_id") ?? "");
   const title = String(formData.get("title") ?? "").trim();
 
   if (!documentId || !title) {
-    return;
+    return { ok: false, error: "Введите название действия" };
+  }
+
+  const { data: document, error: documentError } = await supabase
+    .from("documents")
+    .select("id")
+    .eq("id", documentId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (documentError || !document) {
+    return { ok: false, error: "Документ не найден" };
   }
 
   const { data: lastAction, error: sortError } = await supabase
@@ -1074,27 +1206,31 @@ export async function createAction(formData: FormData): Promise<void> {
 
   if (sortError) {
     console.error("Failed to fetch action sort order:", sortError.message);
-    return;
+    return { ok: false, error: "Не удалось определить порядок действий" };
   }
 
   const sort_order = (lastAction?.sort_order ?? -1) + 1;
 
-  const { error } = await supabase.from("actions").insert({
-    user_id: user.id,
-    document_id: documentId,
-    title,
-    material_id: null,
-    done: false,
-    today: false,
-    sort_order,
-  });
+  const { data, error } = await supabase
+    .from("actions")
+    .insert({
+      user_id: user.id,
+      document_id: documentId,
+      title,
+      done: false,
+      today: false,
+      sort_order,
+    })
+    .select("*")
+    .single();
 
-  if (error) {
-    console.error("Failed to create action:", error.message);
-    return;
+  if (error || !data) {
+    console.error("Failed to create action:", error?.message);
+    return { ok: false, error: "Не удалось сохранить действие" };
   }
 
   revalidateDocument(documentId);
+  return { ok: true, action: { ...data, materials: [] } };
 }
 
 export async function updateAction(formData: FormData): Promise<void> {
@@ -1681,6 +1817,7 @@ export async function createMaterial(formData: FormData): Promise<void> {
   const file_url_or_path = String(formData.get("file_url_or_path") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
   const redirectTarget = String(formData.get("redirect") ?? "");
+  const actionId = String(formData.get("action_id") ?? "");
 
   if (!documentId || !title || !material_type) {
     return;
@@ -1725,6 +1862,19 @@ export async function createMaterial(formData: FormData): Promise<void> {
       return;
     }
 
+    if (
+      actionId &&
+      !(await linkActionMaterialRecord(
+        supabase,
+        actionId,
+        documentId,
+        existingMaterial.id,
+        user.id
+      ))
+    ) {
+      return;
+    }
+
     await revalidateMaterialPublicSites(
       supabase,
       existingMaterial.id,
@@ -1733,6 +1883,10 @@ export async function createMaterial(formData: FormData): Promise<void> {
 
     if (redirectTarget === "materials") {
       redirect(`/materials/${existingMaterial.id}`);
+    }
+
+    if (redirectTarget === "document") {
+      redirect(`/documents/${documentId}`);
     }
 
     return;
@@ -1756,16 +1910,37 @@ export async function createMaterial(formData: FormData): Promise<void> {
       const duplicate = await findExistingMaterialByTitle(supabase, user.id, title);
 
       if (duplicate) {
-        await linkDocumentMaterialRecord(
+        const duplicateLinked = await linkDocumentMaterialRecord(
           supabase,
           documentId,
           duplicate.id,
           user.id
         );
+
+        if (!duplicateLinked) {
+          return;
+        }
+
+        if (
+          actionId &&
+          !(await linkActionMaterialRecord(
+            supabase,
+            actionId,
+            documentId,
+            duplicate.id,
+            user.id
+          ))
+        ) {
+          return;
+        }
         await revalidateMaterialPublicSites(supabase, duplicate.id, documentId);
 
         if (redirectTarget === "materials") {
           redirect(`/materials/${duplicate.id}`);
+        }
+
+        if (redirectTarget === "document") {
+          redirect(`/documents/${documentId}`);
         }
       }
 
@@ -1825,10 +2000,27 @@ export async function createMaterial(formData: FormData): Promise<void> {
     return;
   }
 
+  if (
+    actionId &&
+    !(await linkActionMaterialRecord(
+      supabase,
+      actionId,
+      documentId,
+      material.id,
+      user.id
+    ))
+  ) {
+    return;
+  }
+
   await revalidateMaterialPublicSites(supabase, material.id, documentId);
 
   if (redirectTarget === "materials") {
     redirect(`/materials/${material.id}`);
+  }
+
+  if (redirectTarget === "document") {
+    redirect(`/documents/${documentId}`);
   }
 }
 

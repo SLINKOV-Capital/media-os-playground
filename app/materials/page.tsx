@@ -1,13 +1,8 @@
 import { AppShell } from "@/components/AppShell";
-import { MaterialImagePreview } from "@/components/MaterialImagePreview";
+import { MaterialsListEditor } from "@/components/MaterialsListEditor";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
-import {
-  getMaterialTypeIcon,
-  getMaterialTypeLabel,
-  MATERIAL_TYPES,
-} from "@/lib/materialTypes";
-import { getMaterialPreviewSrc } from "@/lib/materialPreview";
+import { MATERIAL_TYPES } from "@/lib/materialTypes";
 import { importCloudMailImagePreview } from "@/lib/materialPreviewImport";
 import type { Material } from "@/lib/types";
 import Link from "next/link";
@@ -166,59 +161,7 @@ export default async function MaterialsPage({
             )}
           </div>
         ) : (
-          <div className="collection-list">
-            <div
-              className="collection-header collection-header-materials"
-              aria-hidden="true"
-            >
-              <span aria-hidden="true" />
-              <span>Название</span>
-              <span>Тип</span>
-            </div>
-            {materials.map((material) => {
-              const previewSrc = getMaterialPreviewSrc(material);
-
-              return (
-              <Link
-                key={material.id}
-                href={`/materials/${material.id}`}
-                className={`collection-row collection-row-materials${
-                  previewSrc ? " has-image-preview" : ""
-                }`}
-              >
-                <span className="collection-material-leading">
-                  {previewSrc ? (
-                    <MaterialImagePreview
-                      src={previewSrc}
-                      alt={material.title}
-                      variant="list"
-                      fallback={
-                        <span className="material-type-icon" aria-hidden="true">
-                          {getMaterialTypeIcon(material.material_type)}
-                        </span>
-                      }
-                    />
-                  ) : (
-                    <span className="material-type-icon" aria-hidden="true">
-                      {getMaterialTypeIcon(material.material_type)}
-                    </span>
-                  )}
-                </span>
-                <span className="collection-primary collection-primary-material">
-                  {material.title}
-                </span>
-                <span className="collection-material-type">
-                  <span
-                    aria-label={getMaterialTypeLabel(material.material_type)}
-                    title={getMaterialTypeLabel(material.material_type)}
-                  >
-                    {getMaterialTypeIcon(material.material_type)}
-                  </span>
-                </span>
-              </Link>
-            );
-            })}
-          </div>
+          <MaterialsListEditor materials={materials} />
         )}
       </div>
     </AppShell>
