@@ -8,6 +8,7 @@ import {
   MATERIAL_TYPES,
 } from "@/lib/materialTypes";
 import { getMaterialPreviewSrc } from "@/lib/materialPreview";
+import { importCloudMailImagePreview } from "@/lib/materialPreviewImport";
 import type { Material } from "@/lib/types";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -50,7 +51,44 @@ export default async function MaterialsPage({
     console.error("Failed to fetch materials:", error.message);
   }
 
-  const materials = (data ?? []) as Material[];
+  const materials = await Promise.all(
+    ((data ?? []) as Material[]).map(async (material) => {
+      const hasStoredPreview = material.preview_url?.includes(
+        "/storage/v1/object/public/material-previews/"
+      );
+
+      if (material.material_type !== "image" || hasStoredPreview) {
+        return material;
+      }
+
+      const importedPreviewUrl = await importCloudMailImagePreview({
+        supabase,
+        userId: user.id,
+        materialId: material.id,
+        fileUrlOrPath: material.file_url_or_path,
+      });
+
+      if (!importedPreviewUrl) {
+        return material;
+      }
+
+      const { error: previewError } = await supabase
+        .from("materials")
+        .update({ preview_url: importedPreviewUrl })
+        .eq("id", material.id)
+        .eq("user_id", user.id);
+
+      if (previewError) {
+        console.error(
+          "Failed to save recovered material preview:",
+          previewError.message
+        );
+        return material;
+      }
+
+      return { ...material, preview_url: importedPreviewUrl };
+    })
+  );
   const activeType = type?.trim() ?? "";
 
   return (
