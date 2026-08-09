@@ -2,6 +2,7 @@
 
 import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
 import { MaterialUrlField } from "@/components/MaterialUrlField";
+import { NewMaterialImageUpload } from "@/components/NewMaterialImageUpload";
 import type { MaterialTypeValue } from "@/lib/materialTypes";
 import { useState } from "react";
 
@@ -35,6 +36,8 @@ export function MaterialCreateProperties({
           />
         </div>
       </div>
+
+      {materialType === "image" ? <NewMaterialImageUpload /> : null}
 
       <div className="notion-property notion-property-optional">
         <label htmlFor={urlId} className="notion-property-label">

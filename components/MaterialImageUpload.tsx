@@ -3,29 +3,18 @@
 import { saveMaterialImageUpload } from "@/app/materials/image-actions";
 import { MaterialImagePreview } from "@/components/MaterialImagePreview";
 import {
-  MAX_PREVIEW_INPUT_BYTES,
-  resizeImageToWebp,
-} from "@/lib/materialPreviewResize";
+  MATERIAL_IMAGE_ACCEPT,
+  uploadMaterialImageFiles,
+  validateMaterialImage,
+} from "@/lib/materialImageUploadClient";
 import {
   getMaterialPreviewPublicUrl,
   MATERIAL_IMAGES_BUCKET,
-  MATERIAL_PREVIEWS_BUCKET,
-  type MaterialImageExtension,
-  materialImageStoragePath,
   materialImageStoragePaths,
-  materialPreviewStoragePath,
 } from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
-
-const MIME_EXTENSIONS: Record<string, MaterialImageExtension> = {
-  "image/avif": "avif",
-  "image/gif": "gif",
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
 
 type Props = {
   materialId: string;
@@ -42,13 +31,10 @@ export function MaterialImageUpload({ materialId, title, previewUrl }: Props) {
   const [isPending, startTransition] = useTransition();
 
   async function upload(file: File) {
-    const extension = MIME_EXTENSIONS[file.type];
-    if (!extension) {
-      setError("Поддерживаются AVIF, GIF, JPEG, PNG и WebP");
-      return;
-    }
-    if (file.size === 0 || file.size > MAX_PREVIEW_INPUT_BYTES) {
-      setError("Размер изображения должен быть не больше 20 МБ");
+    try {
+      validateMaterialImage(file);
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Некорректный файл");
       return;
     }
 
@@ -61,24 +47,12 @@ export function MaterialImageUpload({ materialId, title, previewUrl }: Props) {
       } = await supabase.auth.getUser();
       if (!user) throw new Error("auth_required");
 
-      const sourcePath = materialImageStoragePath(user.id, materialId, extension);
-      const previewPath = materialPreviewStoragePath(user.id, materialId);
-      const previewBlob = await resizeImageToWebp(file);
-      const [{ error: sourceError }, { error: previewError }] = await Promise.all([
-        supabase.storage.from(MATERIAL_IMAGES_BUCKET).upload(sourcePath, file, {
-          contentType: file.type,
-          cacheControl: "31536000",
-          upsert: true,
-        }),
-        supabase.storage.from(MATERIAL_PREVIEWS_BUCKET).upload(previewPath, previewBlob, {
-          contentType: "image/webp",
-          cacheControl: "31536000",
-          upsert: true,
-        }),
-      ]);
-      if (sourceError || previewError) {
-        throw new Error(sourceError?.message ?? previewError?.message);
-      }
+      const { extension, sourcePath } = await uploadMaterialImageFiles({
+        supabase,
+        userId: user.id,
+        materialId,
+        file,
+      });
 
       startTransition(async () => {
         const result = await saveMaterialImageUpload(materialId, extension);
@@ -119,7 +93,7 @@ export function MaterialImageUpload({ materialId, title, previewUrl }: Props) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/avif,image/gif,image/jpeg,image/png,image/webp"
+        accept={MATERIAL_IMAGE_ACCEPT}
         hidden
         disabled={busy}
         onChange={(event) => {

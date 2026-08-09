@@ -4968,6 +4968,10 @@ h1.page-title-static {
   padding: 0 4px 8px;
 }
 
+.material-new-image-upload {
+  padding: 0;
+}
+
 .material-preview-file-input {
   position: absolute;
   width: 1px;
