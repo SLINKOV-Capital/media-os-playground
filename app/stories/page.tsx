@@ -1,7 +1,5 @@
-import {
-  PublicSectionPage,
-  publicSectionMetadata,
-} from "@/components/PublicSectionPage";
+import { ArticlesIndex } from "@/components/ArticlesIndex";
+import { publicSectionMetadata } from "@/components/PublicSectionPage";
 import { getPublicSection } from "@/lib/publicContent";
 import { fetchPublishedDocumentsBySection } from "@/lib/publicSite";
 import { notFound } from "next/navigation";
@@ -20,7 +18,8 @@ export default async function StoriesPage() {
     type: document.document_type,
     preview: document.preview ?? "",
     href: `/p/${document.site_slug}`,
+    image: document.publication_cover?.image_url,
   }));
 
-  return <PublicSectionPage section={section} items={items} />;
+  return <ArticlesIndex section={section} items={items} />;
 }

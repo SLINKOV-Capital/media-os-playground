@@ -17,6 +17,7 @@ export default async function ArticlesPage() {
     title: document.title,
     type: document.document_type,
     preview: document.preview ?? "",
+    image: document.publication_cover?.image_url,
   }));
 
   return <ArticlesIndex section={section} items={items} />;

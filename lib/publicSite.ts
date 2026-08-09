@@ -11,6 +11,40 @@ import type {
 } from "@/lib/types";
 import { mapDocumentMaterialsFromRows } from "@/lib/mapDocumentMaterials";
 
+async function attachPublicationCovers(
+  documents: PublicDocument[]
+): Promise<PublicDocument[]> {
+  if (documents.length === 0) return documents;
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("document_publication_images")
+    .select("document_id, image_url, alt")
+    .in(
+      "document_id",
+      documents.map((document) => document.id)
+    )
+    .eq("role", "cover")
+    .eq("status", "ready");
+
+  if (error) {
+    console.error("Failed to fetch publication covers:", error.message);
+    return documents;
+  }
+
+  const covers = new Map(
+    (data ?? []).map((cover) => [
+      cover.document_id,
+      { image_url: cover.image_url, alt: cover.alt },
+    ])
+  );
+
+  return documents.map((document) => ({
+    ...document,
+    publication_cover: covers.get(document.id) ?? null,
+  }));
+}
+
 export async function fetchFeaturedPublishedDocuments(): Promise<PublicDocument[]> {
   const supabase = await createClient();
 
@@ -28,7 +62,7 @@ export async function fetchFeaturedPublishedDocuments(): Promise<PublicDocument[
     return [];
   }
 
-  return (data ?? []) as PublicDocument[];
+  return attachPublicationCovers((data ?? []) as PublicDocument[]);
 }
 
 export async function fetchLatestPublishedDocuments(): Promise<PublicDocument[]> {
@@ -48,7 +82,7 @@ export async function fetchLatestPublishedDocuments(): Promise<PublicDocument[]>
     return [];
   }
 
-  return (data ?? []) as PublicDocument[];
+  return attachPublicationCovers((data ?? []) as PublicDocument[]);
 }
 
 export async function fetchPublishedDocumentsBySection(
@@ -69,9 +103,11 @@ export async function fetchPublishedDocumentsBySection(
     return [];
   }
 
-  return ((data ?? []) as PublicDocument[]).filter(
+  const documents = ((data ?? []) as PublicDocument[]).filter(
     (document) => publicDocumentSection(document.document_type) === section
   );
+
+  return attachPublicationCovers(documents);
 }
 
 export async function fetchPublishedDocumentBySlug(

@@ -5,7 +5,7 @@ export function publicDocumentPath(slug: string): string {
   return `/p/${slug}`;
 }
 
-export type PublicDocumentSection = "articles" | "stories" | null;
+export type PublicDocumentSection = "articles" | "stories" | "books" | null;
 
 export function publicDocumentSection(
   documentType: string
@@ -18,6 +18,10 @@ export function publicDocumentSection(
 
   if (normalized.includes("рассказ") || normalized.includes("истор")) {
     return "stories";
+  }
+
+  if (normalized.includes("книг") || normalized.includes("роман")) {
+    return "books";
   }
 
   return null;

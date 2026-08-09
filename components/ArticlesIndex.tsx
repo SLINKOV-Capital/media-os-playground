@@ -48,7 +48,7 @@ export function ArticlesIndex({ section, items = section.items }: ArticlesIndexP
         </ul>
 
         {items.length === 0 ? (
-          <p className="public-lead">Здесь скоро появятся новые статьи.</p>
+          <p className="public-lead">Здесь скоро появятся новые публикации.</p>
         ) : null}
       </div>
     </PublicSiteShell>

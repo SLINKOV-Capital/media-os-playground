@@ -50,7 +50,9 @@ export type PublicDocument = Pick<
   | "site_slug"
   | "site_published_at"
   | "site_featured"
->;
+> & {
+  publication_cover?: Pick<DocumentPublicationImage, "image_url" | "alt"> | null;
+};
 
 export type Material = {
   id: string;

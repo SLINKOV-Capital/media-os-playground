@@ -1,16 +1,30 @@
-import {
-  PublicSectionPage,
-  publicSectionMetadata,
-} from "@/components/PublicSectionPage";
+import { ArticlesIndex } from "@/components/ArticlesIndex";
+import { publicSectionMetadata } from "@/components/PublicSectionPage";
 import { getPublicSection } from "@/lib/publicContent";
+import { fetchPublishedDocumentsBySection } from "@/lib/publicSite";
 import { notFound } from "next/navigation";
 
 const SECTION_ID = "books";
 
 export const metadata = publicSectionMetadata(getPublicSection(SECTION_ID)!);
 
-export default function BooksPage() {
+export default async function BooksPage() {
   const section = getPublicSection(SECTION_ID);
   if (!section) notFound();
-  return <PublicSectionPage section={section} />;
+  const documents = await fetchPublishedDocumentsBySection("books");
+  const items = documents.map((document) => ({
+    slug: document.site_slug!,
+    title: document.title,
+    type: document.document_type,
+    preview: document.preview ?? "",
+    href: `/p/${document.site_slug}`,
+    image: document.publication_cover?.image_url,
+  }));
+
+  return (
+    <ArticlesIndex
+      section={section}
+      items={items.length > 0 ? items : section.items}
+    />
+  );
 }
