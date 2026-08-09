@@ -2,6 +2,7 @@
 
 import { updateMaterial } from "@/app/documents/actions";
 import { MaterialPreviewUpload } from "@/components/MaterialPreviewUpload";
+import { MaterialImageUpload } from "@/components/MaterialImageUpload";
 import { MaterialTypeSelect } from "@/components/MaterialTypeSelect";
 import { MaterialUrlField } from "@/components/MaterialUrlField";
 import type { MaterialTypeValue } from "@/lib/materialTypes";
@@ -118,11 +119,19 @@ export function MaterialPropertiesEditor({
         </div>
       </div>
 
-      <MaterialPreviewUpload
-        materialId={material.id}
-        previewUrl={material.preview_url}
-        title={material.title}
-      />
+      {materialType === "image" ? (
+        <MaterialImageUpload
+          materialId={material.id}
+          previewUrl={material.preview_url}
+          title={material.title}
+        />
+      ) : (
+        <MaterialPreviewUpload
+          materialId={material.id}
+          previewUrl={material.preview_url}
+          title={material.title}
+        />
+      )}
 
       <div className="material-content-block">
         <label

@@ -2,7 +2,6 @@
 
 import {
   downloadPublicationImage,
-  MAX_PUBLICATION_IMAGE_INPUT_BYTES,
   optimizePublicationImage,
 } from "@/lib/documentPublicationImage";
 import {
@@ -105,10 +104,12 @@ async function uploadPreparedImage({
 async function saveCover({
   documentId,
   sourceMaterialId,
+  alt,
   input,
 }: {
   documentId: string;
-  sourceMaterialId: string | null;
+  sourceMaterialId: string;
+  alt: string;
   input: Buffer | ArrayBuffer;
 }): Promise<PublicationImageResult> {
   const context = await getContext(documentId);
@@ -137,7 +138,7 @@ async function saveCover({
     const values = {
       source_material_id: sourceMaterialId,
       title: null,
-      alt: "",
+      alt,
       storage_path: prepared.storagePath,
       image_url: prepared.imageUrl,
       width: prepared.width,
@@ -190,31 +191,16 @@ export async function makeDocumentCoverFromMaterial(
 
   try {
     const input = await downloadPublicationImage(material.source);
-    return saveCover({ documentId, sourceMaterialId: materialId, input });
+    return saveCover({
+      documentId,
+      sourceMaterialId: materialId,
+      alt: material.title,
+      input,
+    });
   } catch (error) {
     console.error("Failed to download cover source:", error);
     return { ok: false, error: "Не удалось получить исходное изображение" };
   }
-}
-
-export async function uploadDocumentCover(
-  formData: FormData
-): Promise<PublicationImageResult> {
-  const documentId = String(formData.get("document_id") ?? "");
-  const file = formData.get("file");
-
-  if (!documentId || !(file instanceof File) || !file.type.startsWith("image/")) {
-    return { ok: false, error: "Выберите файл изображения" };
-  }
-  if (file.size === 0 || file.size > MAX_PUBLICATION_IMAGE_INPUT_BYTES) {
-    return { ok: false, error: "Размер изображения должен быть не больше 20 МБ" };
-  }
-
-  return saveCover({
-    documentId,
-    sourceMaterialId: null,
-    input: await file.arrayBuffer(),
-  });
 }
 
 export async function addDocumentIllustrationFromMaterial(

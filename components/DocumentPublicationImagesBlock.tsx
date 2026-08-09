@@ -6,12 +6,11 @@ import {
   removeDocumentPublicationImage,
   reorderDocumentIllustrations,
   updateDocumentPublicationImage,
-  uploadDocumentCover,
 } from "@/app/documents/publication-image-actions";
 import type { DocumentPublicationImage, Material } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 type Props = {
   documentId: string;
@@ -31,7 +30,6 @@ export function DocumentPublicationImagesBlock({
   materials,
 }: Props) {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [assets, setAssets] = useState(initialAssets);
   const [coverMaterialId, setCoverMaterialId] = useState("");
   const [illustrationMaterialId, setIllustrationMaterialId] = useState("");
@@ -156,29 +154,6 @@ export function DocumentPublicationImagesBlock({
             }
           >
             Сделать обложку
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (!file) return;
-              const formData = new FormData();
-              formData.set("document_id", documentId);
-              formData.set("file", file);
-              startTransition(async () => refreshAfter(await uploadDocumentCover(formData)));
-            }}
-          />
-          <button
-            type="button"
-            className="ghost-button"
-            disabled={isPending}
-            onClick={() => fileRef.current?.click()}
-          >
-            Загрузить обложку
           </button>
         </div>
       </div>

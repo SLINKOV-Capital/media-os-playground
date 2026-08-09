@@ -8,7 +8,9 @@ import { importCloudMailImagePreview } from "@/lib/materialPreviewImport";
 import { slugifyTitle, withSlugSuffix } from "@/lib/slugify";
 import {
   getMaterialPreviewPublicUrl,
+  MATERIAL_IMAGES_BUCKET,
   MATERIAL_PREVIEWS_BUCKET,
+  materialImageStoragePaths,
   materialPreviewStoragePaths,
 } from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/server";
@@ -885,6 +887,14 @@ export async function deleteMaterial(formData: FormData): Promise<ActionResult> 
     console.error("Failed to delete material previews:", storageError.message);
   }
 
+  const { error: imageStorageError } = await supabase.storage
+    .from(MATERIAL_IMAGES_BUCKET)
+    .remove(materialImageStoragePaths(user.id, materialId));
+
+  if (imageStorageError) {
+    console.error("Failed to delete Material source images:", imageStorageError.message);
+  }
+
   revalidatePath("/materials");
   return { ok: true };
 }
@@ -956,18 +966,22 @@ export async function bulkDeleteMaterials(
   const previewPaths = deletedIds.flatMap((materialId) =>
     materialPreviewStoragePaths(user.id, materialId)
   );
-  const { error: storageError } = await supabase.storage
-    .from(MATERIAL_PREVIEWS_BUCKET)
-    .remove(previewPaths);
+  const imagePaths = deletedIds.flatMap((materialId) =>
+    materialImageStoragePaths(user.id, materialId)
+  );
+  const [{ error: storageError }, { error: imageStorageError }] = await Promise.all([
+    supabase.storage.from(MATERIAL_PREVIEWS_BUCKET).remove(previewPaths),
+    supabase.storage.from(MATERIAL_IMAGES_BUCKET).remove(imagePaths),
+  ]);
 
   revalidatePath("/materials");
 
-  return storageError
+  return storageError || imageStorageError
     ? {
         ok: true,
         deletedIds,
         warning:
-          "Материалы удалены, но часть файлов миниатюр не удалось удалить из Storage.",
+          "Материалы удалены, но часть файлов изображений не удалось удалить из Storage.",
       }
     : { ok: true, deletedIds };
 }
