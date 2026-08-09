@@ -1,5 +1,6 @@
 import { generateActions, updateDocumentTitle } from "@/app/documents/actions";
 import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
+import { DeleteDocumentButton } from "@/components/DeleteDocumentButton";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
 import { DocumentPublicationImagesBlock } from "@/components/DocumentPublicationImagesBlock";
 import { DocumentSiteBlock } from "@/components/DocumentSiteBlock";
@@ -203,6 +204,11 @@ export default async function DocumentPage({
           <DocumentMaterialsBlock
             documentId={document.id}
             materials={materials}
+          />
+
+          <DeleteDocumentButton
+            documentId={document.id}
+            published={Boolean(document.site_published_at) || document.site_status === "published"}
           />
         </div>
       </div>
