@@ -18,7 +18,7 @@ export async function deleteDraftDocument(
 
   const { data: document, error: documentError } = await supabase
     .from("documents")
-    .select("id, site_status, site_published_at")
+    .select("id, site_status")
     .eq("id", documentId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -27,7 +27,7 @@ export async function deleteDraftDocument(
     return { ok: false, error: "Документ не найден" };
   }
 
-  if (document.site_status === "published" || document.site_published_at) {
+  if (document.site_status === "published") {
     return { ok: false, error: "Опубликованный документ удалить нельзя" };
   }
 
@@ -62,7 +62,6 @@ export async function deleteDraftDocument(
     .delete()
     .eq("id", documentId)
     .eq("user_id", user.id)
-    .is("site_published_at", null)
     .neq("site_status", "published");
 
   if (deleteError) {

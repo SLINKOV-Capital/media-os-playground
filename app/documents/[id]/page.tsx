@@ -208,7 +208,7 @@ export default async function DocumentPage({
 
           <DeleteDocumentButton
             documentId={document.id}
-            published={Boolean(document.site_published_at) || document.site_status === "published"}
+            published={document.site_status === "published"}
           />
         </div>
       </div>
