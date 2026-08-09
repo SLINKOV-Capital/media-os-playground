@@ -7,7 +7,10 @@ import {
   DEMO_TERMS,
 } from "@/lib/demoArticle";
 import { publicDocumentSection } from "@/lib/site";
-import { fetchPublishedDocumentBySlug } from "@/lib/publicSite";
+import {
+  fetchPublishedDocumentBySlug,
+  fetchPublishedDocumentCover,
+} from "@/lib/publicSite";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,7 +24,7 @@ type ArticleView = {
   title: string;
   preview: string | null;
   content_md: string;
-  cover: string | null;
+  cover: { src: string; alt: string } | null;
   document_type?: string;
   related: typeof DEMO_RELATED_ARTICLES | [];
   backHref: string;
@@ -59,7 +62,9 @@ async function resolveArticle(slug: string): Promise<ArticleView | null> {
       title: DEMO_ARTICLE.title,
       preview: DEMO_ARTICLE.preview,
       content_md: DEMO_ARTICLE.content_md,
-      cover: DEMO_ARTICLE.cover,
+      cover: DEMO_ARTICLE.cover
+        ? { src: DEMO_ARTICLE.cover, alt: DEMO_ARTICLE.title }
+        : null,
       related: DEMO_RELATED_ARTICLES,
       backHref: "/articles",
       backLabel: "Статьи",
@@ -70,13 +75,16 @@ async function resolveArticle(slug: string): Promise<ArticleView | null> {
   const document = await fetchPublishedDocumentBySlug(slug);
   if (!document) return null;
 
+  const publicationCover = await fetchPublishedDocumentCover(document.id);
   const section = publicDocumentSection(document.document_type);
 
   return {
     title: document.title,
     preview: document.preview,
     content_md: document.content_md ?? "",
-    cover: null,
+    cover: publicationCover
+      ? { src: publicationCover.image_url, alt: publicationCover.alt }
+      : null,
     document_type: document.document_type,
     related: [],
     backHref:
@@ -106,8 +114,8 @@ export default async function PublicDocumentPage({
   const cover = article.cover ? (
     <div className="public-article-cover">
       <Image
-        src={article.cover}
-        alt=""
+        src={article.cover.src}
+        alt={article.cover.alt}
         fill
         priority
         sizes="(max-width: 1100px) 100vw, 680px"

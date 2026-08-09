@@ -506,6 +506,7 @@ export function ArticleExperience({
             content={markdown}
             className="public-article-content markdown-content"
             components={markdownComponents}
+            typographyLocale={lang === "ru" ? "ru" : undefined}
           />
         </article>
 

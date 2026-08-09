@@ -4,7 +4,11 @@ import {
   publicDocumentSection,
   type PublicDocumentSection,
 } from "@/lib/site";
-import type { Material, PublicDocument } from "@/lib/types";
+import type {
+  DocumentPublicationImage,
+  Material,
+  PublicDocument,
+} from "@/lib/types";
 import { mapDocumentMaterialsFromRows } from "@/lib/mapDocumentMaterials";
 
 export async function fetchFeaturedPublishedDocuments(): Promise<PublicDocument[]> {
@@ -90,6 +94,26 @@ export async function fetchPublishedDocumentBySlug(
   }
 
   return (data as PublicDocument | null) ?? null;
+}
+
+export async function fetchPublishedDocumentCover(
+  documentId: string
+): Promise<Pick<DocumentPublicationImage, "image_url" | "alt"> | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("document_publication_images")
+    .select("image_url, alt")
+    .eq("document_id", documentId)
+    .eq("role", "cover")
+    .eq("status", "ready")
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to fetch published document cover:", error.message);
+    return null;
+  }
+
+  return data ?? null;
 }
 
 export async function fetchPublishedDocumentMaterials(

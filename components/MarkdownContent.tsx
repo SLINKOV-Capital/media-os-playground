@@ -2,13 +2,18 @@ import { MermaidDiagram } from "@/components/MermaidDiagram";
 import { isValidElement, type ReactNode } from "react";
 import Markdown from "react-markdown";
 import type { Components } from "react-markdown";
+import { remarkRussianTypography } from "@/lib/remarkRussianTypography";
 import remarkGfm from "remark-gfm";
 
 type MarkdownContentProps = {
   content: string;
   className?: string;
   components?: Components;
+  typographyLocale?: "ru";
 };
+
+const baseRemarkPlugins = [remarkGfm];
+const russianRemarkPlugins = [remarkGfm, remarkRussianTypography];
 
 const baseComponents: Components = {
   code: ({ className, children, ...props }) => {
@@ -51,6 +56,7 @@ export function MarkdownContent({
   content,
   className,
   components,
+  typographyLocale,
 }: MarkdownContentProps) {
   if (!content.trim()) {
     return null;
@@ -59,7 +65,9 @@ export function MarkdownContent({
   return (
     <div className={className ?? "markdown-content"}>
       <Markdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={
+          typographyLocale === "ru" ? russianRemarkPlugins : baseRemarkPlugins
+        }
         components={{ ...baseComponents, ...components }}
       >
         {content}

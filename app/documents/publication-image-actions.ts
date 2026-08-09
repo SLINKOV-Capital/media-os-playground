@@ -26,12 +26,17 @@ async function getContext(documentId: string) {
 
   const { data: document } = await supabase
     .from("documents")
-    .select("id")
+    .select("id, site_slug")
     .eq("id", documentId)
     .eq("user_id", user.id)
     .maybeSingle();
 
-  return document ? { supabase, user } : null;
+  return document ? { supabase, user, document } : null;
+}
+
+function revalidatePublicationImagePaths(documentId: string, siteSlug: string | null) {
+  revalidatePath(`/documents/${documentId}`);
+  if (siteSlug) revalidatePath(`/p/${siteSlug}`);
 }
 
 async function getMaterialSource(
@@ -169,7 +174,7 @@ async function saveCover({
         .remove([existing.storage_path]);
     }
 
-    revalidatePath(`/documents/${documentId}`);
+    revalidatePublicationImagePaths(documentId, context.document.site_slug);
     return { ok: true };
   } catch (error) {
     if (uploadedPath) {
@@ -252,7 +257,7 @@ export async function addDocumentIllustrationFromMaterial(
       });
     if (error) throw new Error(`database_save_failed:${error.message}`);
 
-    revalidatePath(`/documents/${documentId}`);
+    revalidatePublicationImagePaths(documentId, context.document.site_slug);
     return { ok: true };
   } catch (error) {
     if (storagePath) {
@@ -287,7 +292,7 @@ export async function updateDocumentPublicationImage(
     .eq("user_id", context.user.id);
 
   if (error) return { ok: false, error: "Не удалось сохранить поля" };
-  revalidatePath(`/documents/${documentId}`);
+  revalidatePublicationImagePaths(documentId, context.document.site_slug);
   return { ok: true };
 }
 
@@ -321,7 +326,7 @@ export async function reorderDocumentIllustrations(
   if (results.some(({ error }) => error)) {
     return { ok: false, error: "Не удалось сохранить порядок" };
   }
-  revalidatePath(`/documents/${documentId}`);
+  revalidatePublicationImagePaths(documentId, context.document.site_slug);
   return { ok: true };
 }
 
@@ -353,6 +358,6 @@ export async function removeDocumentPublicationImage(
     .remove([asset.storage_path]);
   if (storageError) console.error("Failed to remove publication image:", storageError.message);
 
-  revalidatePath(`/documents/${documentId}`);
+  revalidatePublicationImagePaths(documentId, context.document.site_slug);
   return { ok: true };
 }
