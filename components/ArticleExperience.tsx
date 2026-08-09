@@ -31,7 +31,6 @@ type ArticleExperienceProps = {
   videoYoutubeId?: string | null;
   hasAudio?: boolean;
   hasPresentation?: boolean;
-  materials?: ReactNode;
 };
 
 function IconVideo() {
@@ -146,7 +145,6 @@ export function ArticleExperience({
   videoYoutubeId,
   hasAudio = true,
   hasPresentation = true,
-  materials,
 }: ArticleExperienceProps) {
   const [lang, setLang] = useState<ArticleLang>("ru");
   const [activeTermId, setActiveTermId] = useState<string | null>(
@@ -509,8 +507,6 @@ export function ArticleExperience({
             className="public-article-content markdown-content"
             components={markdownComponents}
           />
-
-          {materials}
         </article>
 
         <div ref={termsRailRef} className="public-article-rail public-article-rail--terms">
