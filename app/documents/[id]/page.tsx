@@ -1,6 +1,7 @@
 import { generateActions, updateDocumentTitle } from "@/app/documents/actions";
 import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
+import { DocumentPublicationImagesBlock } from "@/components/DocumentPublicationImagesBlock";
 import { DocumentSiteBlock } from "@/components/DocumentSiteBlock";
 import { DocumentTypeSelect } from "@/components/DocumentTypeSelect";
 import { PageTitle } from "@/components/PageTitle";
@@ -14,7 +15,7 @@ import {
   collectMaterialIdsFromLinkRows,
   mapDocumentMaterialsFromRows,
 } from "@/lib/mapDocumentMaterials";
-import type { Document, Material, WorkflowTemplateV2 } from "@/lib/types";
+import type { Document, DocumentPublicationImage, Material, WorkflowTemplateV2 } from "@/lib/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -61,6 +62,7 @@ export default async function DocumentPage({
   const [
     { data: actionsData },
     { data: documentMaterialsData },
+    { data: publicationImagesData },
     { data: templatesData },
   ] = await Promise.all([
       supabase
@@ -74,6 +76,12 @@ export default async function DocumentPage({
         .select("material_id, materials(*)")
         .eq("document_id", id)
         .eq("user_id", user.id),
+      supabase
+        .from("document_publication_images")
+        .select("*, source_material:materials(id, title)")
+        .eq("document_id", id)
+        .eq("user_id", user.id)
+        .order("sort_order", { ascending: true }),
       supabase
         .from("workflow_templates_v2")
         .select("document_type")
@@ -159,6 +167,12 @@ export default async function DocumentPage({
           </header>
 
           <DocumentSiteBlock document={document} />
+
+          <DocumentPublicationImagesBlock
+            documentId={document.id}
+            assets={(publicationImagesData ?? []) as DocumentPublicationImage[]}
+            materials={materials}
+          />
 
           {actions.length === 0 && template && (
             <div className="workflow-callout">

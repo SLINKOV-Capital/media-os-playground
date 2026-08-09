@@ -1,4 +1,5 @@
 export const MATERIAL_PREVIEWS_BUCKET = "material-previews";
+export const DOCUMENT_IMAGES_BUCKET = "document-images";
 
 export type MaterialPreviewExtension = "gif" | "jpg" | "png" | "webp";
 
@@ -25,4 +26,20 @@ export function materialPreviewStoragePaths(userId: string, materialId: string) 
   return (["gif", "jpg", "png", "webp"] as const).map((extension) =>
     materialPreviewStoragePath(userId, materialId, extension)
   );
+}
+
+export function documentImageStoragePath(
+  userId: string,
+  documentId: string,
+  assetId: string
+) {
+  return `${userId}/${documentId}/${assetId}/image.webp`;
+}
+
+export function getDocumentImagePublicUrl(
+  supabaseUrl: string,
+  storagePath: string
+) {
+  const base = supabaseUrl.replace(/\/$/, "");
+  return `${base}/storage/v1/object/public/${DOCUMENT_IMAGES_BUCKET}/${storagePath}`;
 }

@@ -72,6 +72,26 @@ export type DocumentMaterial = {
   created_at: string;
 };
 
+export type DocumentPublicationImage = {
+  id: string;
+  user_id: string;
+  document_id: string;
+  source_material_id: string | null;
+  role: "cover" | "illustration";
+  title: string | null;
+  alt: string;
+  sort_order: number;
+  storage_path: string;
+  image_url: string;
+  width: number;
+  height: number;
+  status: "processing" | "ready" | "error";
+  error: string | null;
+  created_at: string;
+  updated_at: string;
+  source_material?: Pick<Material, "id" | "title"> | null;
+};
+
 export type ActionMaterial = {
   id: string;
   action_id: string;

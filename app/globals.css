@@ -5045,6 +5045,118 @@ h1.page-title-static {
   align-items: center;
 }
 
+.publication-images-section {
+  display: grid;
+  gap: 24px;
+}
+
+.publication-image-group {
+  display: grid;
+  gap: 12px;
+}
+
+.publication-image-heading {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.publication-images-list {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.publication-image-card {
+  display: grid;
+  grid-template-columns: minmax(160px, 240px) minmax(0, 1fr);
+  gap: 14px 18px;
+  padding: 14px;
+  border: 1px solid var(--border-color, #dedbd5);
+  border-radius: 10px;
+  background: var(--surface-color, #fff);
+}
+
+.publication-image-preview {
+  grid-row: span 3;
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #f4f2ee;
+}
+
+.publication-image-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.publication-image-fields label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted-color, #6e6a63);
+}
+
+.publication-image-fields input,
+.publication-image-add-row select {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color, #d8d5cf);
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+
+.publication-image-source,
+.publication-image-message {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted-color, #6e6a63);
+}
+
+.publication-image-add-row,
+.publication-image-actions,
+.publication-markdown-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.publication-image-add-row select {
+  flex: 1 1 260px;
+}
+
+.publication-markdown-row code {
+  flex: 1 1 300px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #f4f2ee;
+  font-size: 12px;
+}
+
+.publication-image-actions {
+  font-size: 13px;
+  color: var(--muted-color, #6e6a63);
+}
+
+@media (max-width: 700px) {
+  .publication-image-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .publication-image-preview {
+    grid-row: auto;
+    max-height: 280px;
+  }
+}
+
 .material-content-block {
   width: 100%;
   min-width: 0;
