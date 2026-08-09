@@ -28,11 +28,16 @@ function assertSafeHttpsUrl(value: string) {
   return url;
 }
 
-async function fetchWithLimits(url: URL, redirects = 0): Promise<Response> {
+async function fetchWithLimits(
+  url: URL,
+  redirects = 0,
+  referer?: string
+): Promise<Response> {
   const response = await fetch(url, {
     headers: {
       Accept: "image/avif,image/webp,image/png,image/jpeg,image/gif,*/*;q=0.1",
       "User-Agent": "MediaOS-Publisher/1.0",
+      ...(referer ? { Referer: referer } : {}),
     },
     redirect: "manual",
     signal: AbortSignal.timeout(15_000),
@@ -50,7 +55,8 @@ async function fetchWithLimits(url: URL, redirects = 0): Promise<Response> {
 
     return fetchWithLimits(
       assertSafeHttpsUrl(new URL(location, url).toString()),
-      redirects + 1
+      redirects + 1,
+      referer
     );
   }
 
@@ -67,10 +73,7 @@ async function fetchWithLimits(url: URL, redirects = 0): Promise<Response> {
 }
 
 async function resolveCloudMailOriginalUrl(shareUrl: URL) {
-  const weblink = shareUrl.pathname.replace(/^\/public\//, "");
-  const apiUrl = new URL("https://cloud.mail.ru/api/v2/file/download");
-  apiUrl.searchParams.set("weblink", weblink);
-  const response = await fetch(apiUrl, {
+  const response = await fetch(shareUrl, {
     headers: { "User-Agent": "MediaOS-Publisher/1.0" },
     signal: AbortSignal.timeout(10_000),
   });
@@ -79,25 +82,33 @@ async function resolveCloudMailOriginalUrl(shareUrl: URL) {
     throw new Error("cloud_mail_resolve_failed");
   }
 
-  const payload = (await response.json()) as { body?: string };
-  if (!payload.body) {
+  const html = await response.text();
+  const match = html.match(
+    /"weblink_get"\s*:\s*\{[^}]*"url"\s*:\s*"(https:[^"\\]+)"/i
+  );
+
+  if (!match?.[1]) {
     throw new Error("cloud_mail_original_missing");
   }
 
-  return assertSafeHttpsUrl(payload.body);
+  const base = match[1].replace(/\\\//g, "/").replace(/\/$/, "");
+  const weblink = shareUrl.pathname.replace(/^\/public\//, "");
+  return assertSafeHttpsUrl(`${base}/${weblink}`);
 }
 
 export async function downloadPublicationImage(source: string) {
   let url = assertSafeHttpsUrl(source.trim());
+  let referer: string | undefined;
 
   if (
     url.hostname === "cloud.mail.ru" &&
     url.pathname.startsWith("/public/")
   ) {
+    referer = url.toString();
     url = await resolveCloudMailOriginalUrl(url);
   }
 
-  const response = await fetchWithLimits(url);
+  const response = await fetchWithLimits(url, 0, referer);
   const bytes = Buffer.from(await response.arrayBuffer());
 
   if (bytes.length === 0 || bytes.length > MAX_PUBLICATION_IMAGE_INPUT_BYTES) {
