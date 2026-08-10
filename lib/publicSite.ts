@@ -10,6 +10,8 @@ import type {
   PublicDocument,
 } from "@/lib/types";
 import { mapDocumentMaterialsFromRows } from "@/lib/mapDocumentMaterials";
+import type { DemoTerm } from "@/lib/demoArticle";
+import type { RecommendedArticleCard } from "@/components/RecommendedArticles";
 
 async function attachPublicationCovers(
   documents: PublicDocument[]
@@ -168,4 +170,88 @@ export async function fetchPublishedDocumentMaterials(
   }
 
   return mapDocumentMaterialsFromRows(data ?? []);
+}
+
+export async function fetchPublishedDocumentTerms(
+  documentId: string
+): Promise<DemoTerm[]> {
+  const supabase = await createClient();
+  const { data: terms, error } = await supabase
+    .from("document_terms")
+    .select("id, term, definition, explained_in_document_id")
+    .eq("document_id", documentId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("Failed to fetch published document terms:", error.message);
+    return [];
+  }
+
+  const explainedIds = [...new Set((terms ?? []).map((term) => term.explained_in_document_id).filter((id): id is string => Boolean(id)))];
+  let explainedDocuments: { id: string; title: string; site_slug: string | null }[] = [];
+  if (explainedIds.length > 0) {
+    const { data } = await supabase.from("documents").select("id, title, site_slug")
+      .in("id", explainedIds).eq("site_status", "published");
+    explainedDocuments = data ?? [];
+  }
+  const explainedById = new Map(explainedDocuments.map((document) => [document.id, document]));
+
+  return (terms ?? []).map((term) => {
+    const explained = term.explained_in_document_id
+      ? explainedById.get(term.explained_in_document_id)
+      : null;
+    return {
+      id: term.id,
+      lemma: term.term,
+      gloss: term.definition,
+      explainedIn: explained?.site_slug
+        ? { title: explained.title, href: `/p/${explained.site_slug}` }
+        : undefined,
+    };
+  });
+}
+
+export async function fetchPublishedDocumentRecommendations(
+  documentId: string
+): Promise<RecommendedArticleCard[]> {
+  const supabase = await createClient();
+  const { data: links, error } = await supabase
+    .from("document_recommendations")
+    .select("recommended_document_id")
+    .eq("document_id", documentId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error || !links?.length) {
+    if (error) console.error("Failed to fetch document recommendations:", error.message);
+    return [];
+  }
+
+  const orderedIds = links.map((link) => link.recommended_document_id);
+  const { data: documents, error: documentsError } = await supabase
+    .from("documents")
+    .select("id, title, preview, site_slug")
+    .in("id", orderedIds)
+    .eq("site_status", "published");
+  if (documentsError) {
+    console.error("Failed to fetch recommended documents:", documentsError.message);
+    return [];
+  }
+
+  const published = new Map((documents ?? []).map((document) => [document.id, document]));
+  const { data: covers } = await supabase.from("document_publication_images")
+    .select("document_id, image_url").in("document_id", orderedIds)
+    .eq("role", "cover").eq("status", "ready");
+  const coverById = new Map((covers ?? []).map((cover) => [cover.document_id, cover.image_url]));
+
+  return orderedIds.flatMap((id) => {
+    const document = published.get(id);
+    if (!document?.site_slug) return [];
+    return [{
+      href: `/p/${document.site_slug}`,
+      title: document.title,
+      preview: document.preview ?? "",
+      image: coverById.get(id) ?? null,
+    }];
+  });
 }

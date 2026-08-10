@@ -3,7 +3,9 @@ import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
 import { DeleteDocumentButton } from "@/components/DeleteDocumentButton";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
 import { DocumentPublicationImagesBlock } from "@/components/DocumentPublicationImagesBlock";
+import { DocumentRecommendationsBlock } from "@/components/DocumentRecommendationsBlock";
 import { DocumentSiteBlock } from "@/components/DocumentSiteBlock";
+import { DocumentTermsBlock } from "@/components/DocumentTermsBlock";
 import { DocumentTypeSelect } from "@/components/DocumentTypeSelect";
 import { PageTitle } from "@/components/PageTitle";
 import { AppShell } from "@/components/AppShell";
@@ -16,7 +18,7 @@ import {
   collectMaterialIdsFromLinkRows,
   mapDocumentMaterialsFromRows,
 } from "@/lib/mapDocumentMaterials";
-import type { Document, DocumentPublicationImage, Material, WorkflowTemplateV2 } from "@/lib/types";
+import type { Document, DocumentPublicationImage, DocumentRecommendation, DocumentTerm, Material, WorkflowTemplateV2 } from "@/lib/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -64,6 +66,9 @@ export default async function DocumentPage({
     { data: actionsData },
     { data: documentMaterialsData },
     { data: publicationImagesData },
+    { data: recommendationsData },
+    { data: termsData },
+    { data: candidateDocumentsData },
     { data: templatesData },
   ] = await Promise.all([
       supabase
@@ -83,6 +88,23 @@ export default async function DocumentPage({
         .eq("document_id", id)
         .eq("user_id", user.id)
         .order("sort_order", { ascending: true }),
+      supabase
+        .from("document_recommendations")
+        .select("*, recommended_document:documents!document_recommendations_recommended_document_id_fkey(id, title)")
+        .eq("document_id", id)
+        .eq("user_id", user.id)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("document_terms")
+        .select("*")
+        .eq("document_id", id)
+        .eq("user_id", user.id)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("documents")
+        .select("id, title")
+        .eq("user_id", user.id)
+        .order("title", { ascending: true }),
       supabase
         .from("workflow_templates_v2")
         .select("document_type")
@@ -174,6 +196,20 @@ export default async function DocumentPage({
             assets={(publicationImagesData ?? []) as DocumentPublicationImage[]}
             materials={materials}
           />
+
+          <DocumentRecommendationsBlock
+            documentId={document.id}
+            recommendations={(recommendationsData ?? []) as DocumentRecommendation[]}
+            candidates={candidateDocumentsData ?? []}
+          />
+
+          {document.document_type.toLowerCase().includes("стат") ? (
+            <DocumentTermsBlock
+              documentId={document.id}
+              terms={(termsData ?? []) as DocumentTerm[]}
+              candidates={candidateDocumentsData ?? []}
+            />
+          ) : null}
 
           {actions.length === 0 && template && (
             <div className="workflow-callout">

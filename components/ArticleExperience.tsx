@@ -362,12 +362,14 @@ export function ArticleExperience({
         <div className="public-article-term-card">
           <p className="public-article-term-lemma">{activeTerm.lemma}</p>
           <p className="public-article-term-gloss">{activeTerm.gloss}</p>
-          <p className="public-article-term-source">
-            Объясняется в:{" "}
-            <Link href={activeTerm.explainedIn.href}>
-              {activeTerm.explainedIn.title}
-            </Link>
-          </p>
+          {activeTerm.explainedIn ? (
+            <p className="public-article-term-source">
+              Объясняется в:{" "}
+              <Link href={activeTerm.explainedIn.href}>
+                {activeTerm.explainedIn.title}
+              </Link>
+            </p>
+          ) : null}
         </div>
       ) : null}
       <ul className="public-article-terms-list">
@@ -526,12 +528,14 @@ export function ArticleExperience({
           </button>
           <p className="public-article-term-lemma">{activeTerm.lemma}</p>
           <p className="public-article-term-gloss">{activeTerm.gloss}</p>
-          <p className="public-article-term-source">
-            Объясняется в:{" "}
-            <Link href={activeTerm.explainedIn.href}>
-              {activeTerm.explainedIn.title}
-            </Link>
-          </p>
+          {activeTerm.explainedIn ? (
+            <p className="public-article-term-source">
+              Объясняется в:{" "}
+              <Link href={activeTerm.explainedIn.href}>
+                {activeTerm.explainedIn.title}
+              </Link>
+            </p>
+          ) : null}
         </div>
       ) : null}
 

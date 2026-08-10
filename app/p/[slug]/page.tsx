@@ -1,15 +1,18 @@
 import { ArticleExperience } from "@/components/ArticleExperience";
 import { PublicSiteShell } from "@/components/PublicSiteShell";
-import { RecommendedArticles } from "@/components/RecommendedArticles";
+import { RecommendedArticles, type RecommendedArticleCard } from "@/components/RecommendedArticles";
 import {
   DEMO_ARTICLE,
   DEMO_RELATED_ARTICLES,
   DEMO_TERMS,
 } from "@/lib/demoArticle";
+import type { DemoTerm } from "@/lib/demoArticle";
 import { publicDocumentSection } from "@/lib/site";
 import {
   fetchPublishedDocumentBySlug,
   fetchPublishedDocumentCover,
+  fetchPublishedDocumentRecommendations,
+  fetchPublishedDocumentTerms,
 } from "@/lib/publicSite";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -26,10 +29,11 @@ type ArticleView = {
   content_md: string;
   cover: { src: string; alt: string } | null;
   document_type?: string;
-  related: typeof DEMO_RELATED_ARTICLES | [];
+  related: readonly RecommendedArticleCard[];
   backHref: string;
   backLabel: string;
   richDemo: boolean;
+  terms: DemoTerm[];
 };
 
 export async function generateMetadata({
@@ -69,13 +73,18 @@ async function resolveArticle(slug: string): Promise<ArticleView | null> {
       backHref: "/articles",
       backLabel: "Статьи",
       richDemo: true,
+      terms: DEMO_TERMS,
     };
   }
 
   const document = await fetchPublishedDocumentBySlug(slug);
   if (!document) return null;
 
-  const publicationCover = await fetchPublishedDocumentCover(document.id);
+  const [publicationCover, related, terms] = await Promise.all([
+    fetchPublishedDocumentCover(document.id),
+    fetchPublishedDocumentRecommendations(document.id),
+    fetchPublishedDocumentTerms(document.id),
+  ]);
   const section = publicDocumentSection(document.document_type);
 
   return {
@@ -86,7 +95,8 @@ async function resolveArticle(slug: string): Promise<ArticleView | null> {
       ? { src: publicationCover.image_url, alt: publicationCover.alt }
       : null,
     document_type: document.document_type,
-    related: [],
+    related,
+    terms,
     backHref:
       section === "articles" ? "/articles" : section === "stories" ? "/stories" : "/",
     backLabel:
@@ -141,13 +151,13 @@ export default async function PublicDocumentPage({
                 }
               : { ru: article.content_md, en: "", es: "" }
           }
-          terms={article.richDemo ? DEMO_TERMS : []}
+          terms={article.terms}
           videoYoutubeId={article.richDemo ? DEMO_ARTICLE.videoYoutubeId : null}
           hasAudio={article.richDemo}
           hasPresentation={article.richDemo}
         />
 
-        <RecommendedArticles items={article.related} />
+        <RecommendedArticles items={article.related} heading="Рекомендую" />
       </div>
     </PublicSiteShell>
   );

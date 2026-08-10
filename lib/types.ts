@@ -54,6 +54,28 @@ export type PublicDocument = Pick<
   publication_cover?: Pick<DocumentPublicationImage, "image_url" | "alt"> | null;
 };
 
+export type DocumentRecommendation = {
+  id: string;
+  user_id: string;
+  document_id: string;
+  recommended_document_id: string;
+  sort_order: number;
+  created_at: string;
+  recommended_document?: Pick<Document, "id" | "title"> | null;
+};
+
+export type DocumentTerm = {
+  id: string;
+  user_id: string;
+  document_id: string;
+  term: string;
+  definition: string;
+  explained_in_document_id: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Material = {
   id: string;
   user_id: string;

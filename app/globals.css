@@ -6374,3 +6374,121 @@ select.form-field-control {
   background: var(--bg-hover);
   color: var(--text);
 }
+
+/* Document publication metadata */
+.publication-metadata-list,
+.document-terms-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.publication-metadata-list {
+  display: grid;
+  gap: 8px;
+}
+
+.publication-metadata-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.publication-metadata-title {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publication-metadata-order,
+.document-term-actions > span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.document-terms-list {
+  display: grid;
+  gap: 14px;
+}
+
+.document-term-card {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.document-term-card form,
+.document-term-add {
+  display: grid;
+  gap: 12px;
+}
+
+.document-term-card label,
+.document-term-add label {
+  display: grid;
+  gap: 6px;
+}
+
+.document-term-card label > span,
+.document-term-add label > span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.document-term-card input,
+.document-term-card textarea,
+.document-term-card select,
+.document-term-add input,
+.document-term-add textarea,
+.document-term-add select {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.document-term-card textarea,
+.document-term-add textarea {
+  resize: vertical;
+}
+
+.document-term-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.document-term-add {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.document-term-add h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  .publication-metadata-row {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+
+  .publication-metadata-row .destructive-link {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .publication-metadata-order {
+    display: none;
+  }
+}

@@ -2,7 +2,7 @@ export type DemoTerm = {
   id: string;
   lemma: string;
   gloss: string;
-  explainedIn: {
+  explainedIn?: {
     title: string;
     href: string;
   };
