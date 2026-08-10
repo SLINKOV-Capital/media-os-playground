@@ -40,8 +40,9 @@ export async function addDocumentRecommendation(
     .select("id")
     .eq("id", recommendedDocumentId)
     .eq("user_id", context.user.id)
+    .eq("site_status", "published")
     .maybeSingle();
-  if (!target) return { ok: false, error: "Document не найден" };
+  if (!target) return { ok: false, error: "Выберите опубликованный Document" };
 
   const { data: last } = await context.supabase
     .from("document_recommendations")

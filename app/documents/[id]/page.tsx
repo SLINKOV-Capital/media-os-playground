@@ -102,7 +102,7 @@ export default async function DocumentPage({
         .order("sort_order", { ascending: true }),
       supabase
         .from("documents")
-        .select("id, title")
+        .select("id, title, site_status")
         .eq("user_id", user.id)
         .order("title", { ascending: true }),
       supabase
@@ -200,7 +200,9 @@ export default async function DocumentPage({
           <DocumentRecommendationsBlock
             documentId={document.id}
             recommendations={(recommendationsData ?? []) as DocumentRecommendation[]}
-            candidates={candidateDocumentsData ?? []}
+            candidates={(candidateDocumentsData ?? []).filter(
+              (candidate) => candidate.site_status === "published"
+            )}
           />
 
           {document.document_type.toLowerCase().includes("стат") ? (
