@@ -3,13 +3,10 @@
 import { createUploadedImageMaterial } from "@/app/materials/image-actions";
 import {
   MATERIAL_IMAGE_ACCEPT,
+  removeUploadedMaterialImageFiles,
   uploadMaterialImageFiles,
   validateMaterialImage,
 } from "@/lib/materialImageUploadClient";
-import {
-  MATERIAL_IMAGES_BUCKET,
-  MATERIAL_PREVIEWS_BUCKET,
-} from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -86,14 +83,7 @@ export function NewMaterialImageUpload() {
       router.refresh();
     } catch (failure) {
       if (uploadedPaths) {
-        await Promise.all([
-          supabase.storage
-            .from(MATERIAL_IMAGES_BUCKET)
-            .remove([uploadedPaths.sourcePath]),
-          supabase.storage
-            .from(MATERIAL_PREVIEWS_BUCKET)
-            .remove([uploadedPaths.previewPath]),
-        ]);
+        await removeUploadedMaterialImageFiles({ supabase, ...uploadedPaths });
       }
       console.error("Failed to create image Material:", failure);
       setError(

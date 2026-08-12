@@ -824,6 +824,122 @@ a {
   margin-bottom: 20px;
 }
 
+.materials-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.batch-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.batch-upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 32px 20px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg-secondary);
+  text-align: center;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.batch-upload-dropzone.is-dragging {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.batch-upload-dropzone p {
+  margin: 0;
+  font-weight: 500;
+}
+
+.batch-upload-dropzone span,
+.batch-upload-progress-label {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.batch-upload-progress {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+}
+
+.batch-upload-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.batch-upload-progress-label {
+  margin: -12px 0 0;
+  text-align: right;
+}
+
+.batch-upload-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--border);
+}
+
+.batch-upload-files li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 4px 12px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.batch-upload-file-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.batch-upload-status {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.batch-upload-status.is-done {
+  color: #278242;
+}
+
+.batch-upload-status.is-error,
+.batch-upload-file-error {
+  color: var(--danger, #c53030);
+}
+
+.batch-upload-file-error {
+  grid-column: 1 / -1;
+  font-size: 12px;
+}
+
+.batch-upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.batch-upload-summary {
+  margin: 0;
+  font-weight: 500;
+}
+
+.batch-upload-start-hint {
+  margin: -10px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .materials-search-form {
   max-width: 360px;
 }
@@ -1707,6 +1823,15 @@ a {
     flex-direction: column;
     align-items: stretch;
     margin-bottom: 20px;
+  }
+
+  .materials-header-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .materials-header-actions a {
+    justify-content: center;
   }
 
   .content-title {

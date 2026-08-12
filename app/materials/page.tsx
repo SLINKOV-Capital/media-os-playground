@@ -99,9 +99,14 @@ export default async function MaterialsPage({
               Глобальная библиотека источников, файлов и ссылок
             </p>
           </div>
-          <Link href="/materials/new" className="notion-new-button">
-            + Новый материал
-          </Link>
+          <div className="materials-header-actions">
+            <Link href="/materials/batch" className="ghost-button">
+              Загрузить изображения
+            </Link>
+            <Link href="/materials/new" className="notion-new-button">
+              + Новый материал
+            </Link>
+          </div>
         </header>
 
         <div className="materials-toolbar">

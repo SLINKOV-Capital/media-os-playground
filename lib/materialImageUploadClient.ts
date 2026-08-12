@@ -73,3 +73,18 @@ export async function uploadMaterialImageFiles({
 
   return { extension, sourcePath, previewPath };
 }
+
+export async function removeUploadedMaterialImageFiles({
+  supabase,
+  sourcePath,
+  previewPath,
+}: {
+  supabase: SupabaseClient;
+  sourcePath: string;
+  previewPath: string;
+}) {
+  await Promise.all([
+    supabase.storage.from(MATERIAL_IMAGES_BUCKET).remove([sourcePath]),
+    supabase.storage.from(MATERIAL_PREVIEWS_BUCKET).remove([previewPath]),
+  ]);
+}

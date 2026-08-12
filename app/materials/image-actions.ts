@@ -28,6 +28,19 @@ type CreateUploadedImageMaterialInput = {
   extension: MaterialImageExtension;
 };
 
+export async function getMaterialUploadUserId(): Promise<
+  { ok: true; userId: string } | { ok: false; error: string }
+> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user
+    ? { ok: true, userId: user.id }
+    : { ok: false, error: "Требуется авторизация" };
+}
+
 export async function createUploadedImageMaterial({
   materialId,
   documentId,
