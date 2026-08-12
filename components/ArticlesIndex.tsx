@@ -2,13 +2,21 @@ import { PublicSiteShell } from "@/components/PublicSiteShell";
 import type { PlaceholderItem, PublicSection } from "@/lib/publicContent";
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 type ArticlesIndexProps = {
   section: PublicSection;
   items?: PlaceholderItem[];
+  featured?: ReactNode;
+  emptyMessage?: string | null;
 };
 
-export function ArticlesIndex({ section, items = section.items }: ArticlesIndexProps) {
+export function ArticlesIndex({
+  section,
+  items = section.items,
+  featured,
+  emptyMessage = "Здесь скоро появятся новые публикации.",
+}: ArticlesIndexProps) {
   return (
     <PublicSiteShell>
       <div className="public-articles">
@@ -18,6 +26,8 @@ export function ArticlesIndex({ section, items = section.items }: ArticlesIndexP
           </h1>
           <p className="public-articles-intro">{section.intro}</p>
         </header>
+
+        {featured}
 
         <ul className="public-articles-list">
           {items.map((item) => {
@@ -47,8 +57,8 @@ export function ArticlesIndex({ section, items = section.items }: ArticlesIndexP
           })}
         </ul>
 
-        {items.length === 0 ? (
-          <p className="public-lead">Здесь скоро появятся новые публикации.</p>
+        {items.length === 0 && emptyMessage ? (
+          <p className="public-lead">{emptyMessage}</p>
         ) : null}
       </div>
     </PublicSiteShell>

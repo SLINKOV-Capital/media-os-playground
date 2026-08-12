@@ -1,7 +1,7 @@
 import { ArticlesIndex } from "@/components/ArticlesIndex";
+import { BooksShowcase } from "@/components/BooksShowcase";
 import { publicSectionMetadata } from "@/components/PublicSectionPage";
 import { getPublicSection } from "@/lib/publicContent";
-import { fetchPublishedDocumentsBySection } from "@/lib/publicSite";
 import { notFound } from "next/navigation";
 
 const SECTION_ID = "books";
@@ -11,20 +11,13 @@ export const metadata = publicSectionMetadata(getPublicSection(SECTION_ID)!);
 export default async function BooksPage() {
   const section = getPublicSection(SECTION_ID);
   if (!section) notFound();
-  const documents = await fetchPublishedDocumentsBySection("books");
-  const items = documents.map((document) => ({
-    slug: document.site_slug!,
-    title: document.title,
-    type: document.document_type,
-    preview: document.preview ?? "",
-    href: `/p/${document.site_slug}`,
-    image: document.publication_cover?.image_url,
-  }));
 
   return (
     <ArticlesIndex
       section={section}
-      items={items.length > 0 ? items : section.items}
+      items={[]}
+      featured={<BooksShowcase />}
+      emptyMessage={null}
     />
   );
 }
