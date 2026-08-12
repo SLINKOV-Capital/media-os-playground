@@ -492,6 +492,99 @@ a {
   opacity: 0.72;
 }
 
+.documents-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.documents-modes,
+.documents-sort-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.documents-mode,
+.documents-sort-fields button,
+.documents-sort-direction {
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.documents-mode:hover,
+.documents-sort-fields button:hover,
+.documents-sort-direction:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.documents-mode.is-active,
+.documents-sort-fields button.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.documents-list-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.documents-search-input {
+  width: min(360px, 100%);
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.documents-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.documents-sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.documents-sort-direction {
+  min-width: 112px;
+  border-color: var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.documents-focus-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.documents-row-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .documents-row-link {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -1651,9 +1744,20 @@ a {
   }
 
   .collection-row-documents .documents-drag-handle,
-  .collection-row-documents .documents-drag-handle-spacer {
+  .collection-row-documents .documents-drag-handle-spacer,
+  .collection-row-documents .documents-row-status {
     grid-row: 1 / span 3;
     align-self: center;
+  }
+
+  .documents-list-controls,
+  .documents-sort-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .documents-search-input {
+    width: 100%;
   }
 
   .collection-row-documents .collection-meta {

@@ -36,7 +36,7 @@ export default async function DocumentsPage() {
           <div>
             <h1 className="content-title">Документы</h1>
             <p className="content-subtitle">
-              Перетащи, чтобы выставить приоритет. Первые 3 — в фокусе.
+              Рабочие и опубликованные документы
             </p>
           </div>
           <Link href="/documents/new" className="notion-new-button">

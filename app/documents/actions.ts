@@ -1067,7 +1067,8 @@ export async function reorderDocuments(orderedIds: string[]): Promise<void> {
   const { data: existingDocuments, error: fetchError } = await supabase
     .from("documents")
     .select("id")
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .neq("site_status", "published");
 
   if (fetchError) {
     console.error("Failed to fetch documents for reorder:", fetchError.message);

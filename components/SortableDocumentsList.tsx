@@ -28,7 +28,17 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type CSSProperties,
+} from "react";
+
+type ListMode = "working" | "published" | "all";
+type SortField = "date" | "title";
+type SortDirection = "asc" | "desc";
 
 type SortableDocumentsListProps = {
   documents: Document[];
@@ -36,13 +46,7 @@ type SortableDocumentsListProps = {
 
 function GripIcon() {
   return (
-    <svg
-      width="10"
-      height="14"
-      viewBox="0 0 10 14"
-      fill="currentColor"
-      aria-hidden="true"
-    >
+    <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
       <circle cx="2" cy="2" r="1.25" />
       <circle cx="8" cy="2" r="1.25" />
       <circle cx="2" cy="7" r="1.25" />
@@ -55,8 +59,9 @@ function GripIcon() {
 
 type DocumentRowProps = {
   document: Document;
-  focusRank: number;
+  focusRank?: number;
   showDragHandle?: boolean;
+  showPublishedIndicator?: boolean;
   isDragOverlay?: boolean;
   isDragging?: boolean;
   style?: CSSProperties;
@@ -69,8 +74,9 @@ type DocumentRowProps = {
 
 function DocumentRow({
   document,
-  focusRank,
+  focusRank = -1,
   showDragHandle = false,
+  showPublishedIndicator = false,
   isDragOverlay = false,
   isDragging = false,
   style,
@@ -78,7 +84,7 @@ function DocumentRow({
   dragHandleProps,
 }: DocumentRowProps) {
   const clientDragHandleProps = useClientDragHandleProps(dragHandleProps);
-  const isFocusPriority = focusRank >= 0 && focusRank < 3;
+  const isFocusPriority = showDragHandle && focusRank >= 0 && focusRank < 3;
 
   const className = [
     "collection-row",
@@ -86,9 +92,7 @@ function DocumentRow({
     isFocusPriority ? "is-focus-priority" : "",
     isDragging ? "is-dragging" : "",
     isDragOverlay ? "is-drag-overlay" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  ].filter(Boolean).join(" ");
 
   return (
     <li ref={setNodeRef} style={style} className={className}>
@@ -103,13 +107,17 @@ function DocumentRow({
           <GripIcon />
         </button>
       ) : (
-        <span className="documents-drag-handle-spacer" aria-hidden="true" />
+        <span
+          className="documents-row-status"
+          aria-label={showPublishedIndicator && document.site_status === "published" ? "Опубликован" : undefined}
+          aria-hidden={showPublishedIndicator && document.site_status === "published" ? undefined : true}
+          title={showPublishedIndicator && document.site_status === "published" ? "Опубликован" : undefined}
+        >
+          {showPublishedIndicator && document.site_status === "published" ? "✓" : ""}
+        </span>
       )}
 
-      <Link
-        href={`/documents/${document.id}`}
-        className="collection-primary documents-row-link"
-      >
+      <Link href={`/documents/${document.id}`} className="collection-primary documents-row-link">
         {document.title}
       </Link>
       <span className="collection-meta">{document.document_type}</span>
@@ -118,26 +126,9 @@ function DocumentRow({
   );
 }
 
-function SortableDocumentRow({
-  document,
-  focusRank,
-}: {
-  document: Document;
-  focusRank: number;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: document.id });
-
-  const style: CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+function SortableDocumentRow({ document, focusRank }: { document: Document; focusRank: number }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: document.id });
+  const style: CSSProperties = { transform: CSS.Transform.toString(transform), transition };
 
   return (
     <DocumentRow
@@ -152,125 +143,172 @@ function SortableDocumentRow({
   );
 }
 
-export function SortableDocumentsList({
-  documents,
-}: SortableDocumentsListProps) {
+export function SortableDocumentsList({ documents }: SortableDocumentsListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [items, setItems] = useState(documents);
+  const [mode, setMode] = useState<ListMode>("working");
+  const [query, setQuery] = useState("");
+  const [sortField, setSortField] = useState<SortField>("date");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  useEffect(() => {
-    setItems(documents);
-  }, [documents]);
+  useEffect(() => setItems(documents), [documents]);
 
-  const activeDocument = activeId
-    ? items.find((document) => document.id === activeId)
-    : null;
-  const activeFocusRank = activeDocument
-    ? items.findIndex((document) => document.id === activeDocument.id)
-    : -1;
+  const normalizedQuery = query.trim().toLocaleLowerCase("ru");
+  const canDrag = mode === "working" && normalizedQuery === "";
+
+  const visibleItems = useMemo(() => {
+    const filtered = items.filter((document) => {
+      const matchesMode = mode === "all"
+        || (mode === "published" ? document.site_status === "published" : document.site_status !== "published");
+      return matchesMode && document.title.toLocaleLowerCase("ru").includes(normalizedQuery);
+    });
+
+    if (canDrag) {
+      return filtered;
+    }
+
+    return [...filtered].sort((a, b) => {
+      const comparison = sortField === "date"
+        ? a.updated_at.localeCompare(b.updated_at)
+        : a.title.localeCompare(b.title, "ru", { sensitivity: "base" });
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [canDrag, items, mode, normalizedQuery, sortDirection, sortField]);
+
+  const activeDocument = activeId ? visibleItems.find((document) => document.id === activeId) : null;
+  const activeFocusRank = activeDocument ? visibleItems.findIndex((document) => document.id === activeDocument.id) : -1;
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 6 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
+  function changeSortField(nextField: SortField) {
+    setSortField(nextField);
+    setSortDirection(nextField === "date" ? "desc" : "asc");
+  }
+
   function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
+    if (canDrag) setActiveId(String(event.active.id));
   }
 
   async function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
     setActiveId(null);
+    if (!canDrag || !event.over || event.active.id === event.over.id) return;
 
-    if (!over || active.id === over.id) {
-      return;
-    }
+    const oldIndex = visibleItems.findIndex((item) => item.id === event.active.id);
+    const newIndex = visibleItems.findIndex((item) => item.id === event.over?.id);
+    if (oldIndex < 0 || newIndex < 0) return;
 
-    const oldIndex = items.findIndex((item) => item.id === active.id);
-    const newIndex = items.findIndex((item) => item.id === over.id);
-
-    if (oldIndex < 0 || newIndex < 0) {
-      return;
-    }
-
-    const nextItems = arrayMove(items, oldIndex, newIndex);
-    setItems(nextItems);
+    const reorderedWorking = arrayMove(visibleItems, oldIndex, newIndex);
+    const published = items.filter((item) => item.site_status === "published");
+    setItems([...reorderedWorking, ...published]);
 
     try {
-      await reorderDocuments(nextItems.map((item) => item.id));
-      startTransition(() => {
-        router.refresh();
-      });
+      await reorderDocuments(reorderedWorking.map((item) => item.id));
+      startTransition(() => router.refresh());
     } catch {
       setItems(documents);
-      startTransition(() => {
-        router.refresh();
-      });
+      startTransition(() => router.refresh());
     }
   }
 
-  function handleDragCancel() {
-    setActiveId(null);
-  }
+  const list = (
+    <ul className={`collection-list documents-sortable-list${isPending ? " is-pending" : ""}`}>
+      <li className="collection-header collection-header-documents" aria-hidden="true">
+        <span />
+        <span>Название</span>
+        <span>Тип</span>
+        <span>Обновлён</span>
+      </li>
+      {visibleItems.map((document, index) => canDrag ? (
+        <SortableDocumentRow key={document.id} document={document} focusRank={index} />
+      ) : (
+        <DocumentRow key={document.id} document={document} showPublishedIndicator={mode === "all"} />
+      ))}
+    </ul>
+  );
 
   return (
-    <DndContext
-      id="documents-list-dnd"
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <SortableContext
-        items={items.map((item) => item.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <ul
-          className={`collection-list documents-sortable-list${
-            isPending ? " is-pending" : ""
-          }`}
-        >
-          <li
-            className="collection-header collection-header-documents"
-            aria-hidden="true"
-          >
-            <span />
-            <span>Название</span>
-            <span>Тип</span>
-            <span>Обновлён</span>
-          </li>
-          {items.map((document, index) => (
-            <SortableDocumentRow
-              key={document.id}
-              document={document}
-              focusRank={index}
-            />
+    <>
+      <div className="documents-toolbar">
+        <div className="documents-modes" aria-label="Режим списка">
+          {([
+            ["working", "В работе"],
+            ["published", "Опубликованные"],
+            ["all", "Все"],
+          ] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`documents-mode${mode === value ? " is-active" : ""}`}
+              aria-pressed={mode === value}
+              onClick={() => setMode(value)}
+            >
+              {label}
+            </button>
           ))}
-        </ul>
-      </SortableContext>
+        </div>
 
-      <DragOverlay dropAnimation={null}>
-        {activeDocument ? (
-          <ul className="collection-list documents-sortable-list">
-            <DocumentRow
-              document={activeDocument}
-              focusRank={activeFocusRank}
-              showDragHandle
-              isDragOverlay
-            />
-          </ul>
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+        <div className="documents-list-controls">
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Поиск по названию…"
+            aria-label="Поиск по названию документа"
+            className="documents-search-input"
+          />
+
+          {!canDrag ? (
+            <div className="documents-sort-controls">
+              <div className="documents-sort-fields" aria-label="Сортировка">
+                <button type="button" className={sortField === "date" ? "is-active" : ""} onClick={() => changeSortField("date")}>По дате</button>
+                <button type="button" className={sortField === "title" ? "is-active" : ""} onClick={() => changeSortField("title")}>По алфавиту</button>
+              </div>
+              <button
+                type="button"
+                className="documents-sort-direction"
+                onClick={() => setSortDirection((current) => current === "asc" ? "desc" : "asc")}
+                aria-label="Изменить направление сортировки"
+              >
+                {sortField === "date"
+                  ? (sortDirection === "desc" ? "Новые → старые" : "Старые → новые")
+                  : (sortDirection === "asc" ? "А → Я" : "Я → А")}
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        {canDrag ? <p className="documents-focus-hint">Перетащи, чтобы выставить приоритет. Первые 3 — в фокусе.</p> : null}
+      </div>
+
+      {visibleItems.length === 0 ? (
+        <div className="empty-state"><p>{normalizedQuery ? "Ничего не найдено" : "В этом разделе пока нет документов"}</p></div>
+      ) : canDrag ? (
+        <DndContext
+          id="documents-list-dnd"
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={() => setActiveId(null)}
+        >
+          <SortableContext items={visibleItems.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+            {list}
+          </SortableContext>
+          <DragOverlay dropAnimation={null}>
+            {activeDocument ? (
+              <ul className="collection-list documents-sortable-list">
+                <DocumentRow document={activeDocument} focusRank={activeFocusRank} showDragHandle isDragOverlay />
+              </ul>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      ) : list}
+    </>
   );
 }
