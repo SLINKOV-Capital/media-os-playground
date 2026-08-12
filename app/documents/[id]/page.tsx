@@ -210,6 +210,7 @@ export default async function DocumentPage({
               documentId={document.id}
               terms={(termsData ?? []) as DocumentTerm[]}
               candidates={candidateDocumentsData ?? []}
+              contentMd={document.content_md ?? ""}
             />
           ) : null}
 

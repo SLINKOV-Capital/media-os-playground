@@ -319,6 +319,36 @@ export function ArticleExperience({
     strong: ({ children }) => (
       <strong>{mapChildren(children, highlight, openTerm)}</strong>
     ),
+    span: ({ children, ...props }) => {
+      const termName = (props as Record<string, unknown>)["data-term-name"];
+      const term = typeof termName === "string"
+        ? terms.find(
+            (candidate) =>
+              candidate.lemma.toLocaleLowerCase("ru") ===
+              termName.toLocaleLowerCase("ru")
+          )
+        : null;
+
+      if (!term) return <span>{children}</span>;
+
+      return (
+        <span
+          role="button"
+          tabIndex={0}
+          className="public-term-mark"
+          onClick={() => openTerm(term)}
+          onMouseEnter={() => openTerm(term)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              openTerm(term);
+            }
+          }}
+        >
+          {children}
+        </span>
+      );
+    },
   };
 
   const tocNav = (

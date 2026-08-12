@@ -4,6 +4,8 @@ import Markdown from "react-markdown";
 import type { Components } from "react-markdown";
 import { remarkRussianTypography } from "@/lib/remarkRussianTypography";
 import remarkGfm from "remark-gfm";
+import remarkDirective from "remark-directive";
+import { remarkTermDirectives } from "@/lib/remarkTermDirectives";
 
 type MarkdownContentProps = {
   content: string;
@@ -12,8 +14,13 @@ type MarkdownContentProps = {
   typographyLocale?: "ru";
 };
 
-const baseRemarkPlugins = [remarkGfm];
-const russianRemarkPlugins = [remarkGfm, remarkRussianTypography];
+const baseRemarkPlugins = [remarkGfm, remarkDirective, remarkTermDirectives];
+const russianRemarkPlugins = [
+  remarkGfm,
+  remarkDirective,
+  remarkTermDirectives,
+  remarkRussianTypography,
+];
 
 const baseComponents: Components = {
   code: ({ className, children, ...props }) => {

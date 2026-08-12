@@ -12,15 +12,28 @@ import { useEffect, useState, useTransition } from "react";
 
 type Candidate = { id: string; title: string };
 
-export function DocumentTermsBlock({ documentId, terms: initialTerms, candidates }: {
+export function DocumentTermsBlock({ documentId, terms: initialTerms, candidates, contentMd }: {
   documentId: string;
   terms: DocumentTerm[];
   candidates: Candidate[];
+  contentMd: string;
 }) {
   const router = useRouter();
   const [terms, setTerms] = useState(initialTerms);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const knownTerms = new Set(
+    terms.map((item) => item.term.toLocaleLowerCase("ru"))
+  );
+  const directivePattern = /:term\[[^\]]*\]\{name="([^"]+)"\}/g;
+  const unknownDirectiveTerms = [...contentMd.matchAll(directivePattern)]
+    .map((match) => match[1].trim())
+    .filter(
+      (termName, index, all) =>
+        !knownTerms.has(termName.toLocaleLowerCase("ru")) &&
+        all.indexOf(termName) === index
+    );
 
   useEffect(() => setTerms(initialTerms), [initialTerms]);
 
@@ -46,6 +59,11 @@ export function DocumentTermsBlock({ documentId, terms: initialTerms, candidates
   return (
     <section className="doc-section publication-metadata-section">
       <div className="section-header"><h2 className="section-label">Термины</h2></div>
+      {unknownDirectiveTerms.length > 0 ? (
+        <p className="document-term-directive-warning" role="status">
+          В тексте есть разметка для отсутствующих терминов: {unknownDirectiveTerms.join(", ")}.
+        </p>
+      ) : null}
       {terms.length === 0 ? <p className="empty-text">Термины не добавлены.</p> : (
         <ol className="document-terms-list">
           {terms.map((item, index) => (
@@ -84,7 +102,7 @@ export function DocumentTermsBlock({ documentId, terms: initialTerms, candidates
         data.set("document_id", documentId);
         startTransition(async () => finish(await addDocumentTerm(data), form));
       }}>
-        <h3>Добавить термин</h3>
+        <h3>🏷️ Добавить термин</h3>
         <label><span>Термин</span><input name="term" required /></label>
         <label><span>Краткое определение</span><textarea name="definition" rows={3} required /></label>
         <label><span>Объясняется в</span><select name="explained_in_document_id" defaultValue="">

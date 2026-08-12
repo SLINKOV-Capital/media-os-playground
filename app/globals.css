@@ -6794,6 +6794,13 @@ select.form-field-control {
   gap: 14px;
 }
 
+.document-term-directive-warning {
+  margin: 0 0 12px;
+  color: var(--danger, #c53030);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .document-term-card {
   padding: 14px;
   border: 1px solid var(--border);
