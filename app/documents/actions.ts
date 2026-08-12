@@ -4,6 +4,7 @@ import type { ActionResult } from "@/lib/actionResult";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { isValidMaterialType } from "@/lib/materialTypes";
 import { deriveMaterialPreviewUrl } from "@/lib/materialPreview";
+import { syncDocumentImageIssues } from "@/lib/documentImageIssuesServer";
 import { importCloudMailImagePreview } from "@/lib/materialPreviewImport";
 import { slugifyTitle, withSlugSuffix } from "@/lib/slugify";
 import {
@@ -370,6 +371,13 @@ export async function updateDocumentContentMd(
     return { ok: false, error: "not_found" };
   }
 
+  try {
+    await syncDocumentImageIssues(supabase, user.id, id, content_md);
+  } catch (imageError) {
+    console.error("Failed to synchronize Document image issues:", imageError);
+    return { ok: false, error: "not_found" };
+  }
+
   await revalidateDocumentSite(supabase, id);
   return { ok: true };
 }
@@ -516,6 +524,13 @@ export async function publishDocument(
     }
 
     console.error("Failed to publish document:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  try {
+    await syncDocumentImageIssues(supabase, user.id, id, content_md);
+  } catch (imageError) {
+    console.error("Failed to synchronize published image issues:", imageError);
     return { ok: false, error: "not_found" };
   }
 

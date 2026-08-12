@@ -1,6 +1,7 @@
 "use client";
 
 import type { DemoTerm } from "@/lib/demoArticle";
+import { stripUnresolvedMarkdownImages } from "@/lib/documentMarkdownImages";
 import { extractMarkdownToc, slugifyHeading } from "@/lib/demoArticle";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import Link from "next/link";
@@ -162,7 +163,7 @@ export function ArticleExperience({
   const tocPanelRef = useRef<HTMLElement>(null);
   const termsPanelRef = useRef<HTMLElement>(null);
 
-  const markdown = contents[lang] || contents.ru;
+  const markdown = stripUnresolvedMarkdownImages(contents[lang] || contents.ru);
   const toc = useMemo(() => extractMarkdownToc(markdown), [markdown]);
   const activeTerm =
     terms.find((t) => t.id === activeTermId) ?? terms[0] ?? null;
@@ -310,9 +311,30 @@ export function ArticleExperience({
         </h3>
       );
     },
-    p: ({ children }) => (
-      <p>{mapChildren(children, highlight, openTerm)}</p>
-    ),
+    p: ({ children }) => {
+      const paragraphChildren = Children.toArray(children);
+      const image = paragraphChildren.length === 1 &&
+        isValidElement(paragraphChildren[0]) &&
+        paragraphChildren[0].type === "img"
+          ? paragraphChildren[0] as ReactElement<{ title?: string }>
+          : null;
+
+      if (image) {
+        const caption = image.props.title?.trim();
+        return (
+          <figure className="public-article-figure">
+            {image}
+            {caption ? (
+              <figcaption className="public-article-figcaption">
+                {caption}
+              </figcaption>
+            ) : null}
+          </figure>
+        );
+      }
+
+      return <p>{mapChildren(children, highlight, openTerm)}</p>;
+    },
     li: ({ children }) => (
       <li>{mapChildren(children, highlight, openTerm)}</li>
     ),

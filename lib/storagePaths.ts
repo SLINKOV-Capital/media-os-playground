@@ -1,5 +1,6 @@
 export const MATERIAL_PREVIEWS_BUCKET = "material-previews";
 export const DOCUMENT_IMAGES_BUCKET = "document-images";
+export const DOCUMENT_IMAGE_IMPORTS_BUCKET = "document-image-imports";
 export const MATERIAL_IMAGES_BUCKET = "material-images";
 
 export type MaterialPreviewExtension = "gif" | "jpg" | "png" | "webp";
@@ -43,6 +44,15 @@ export function getDocumentImagePublicUrl(
 ) {
   const base = supabaseUrl.replace(/\/$/, "");
   return `${base}/storage/v1/object/public/${DOCUMENT_IMAGES_BUCKET}/${storagePath}`;
+}
+
+export function documentImageImportStoragePath(
+  userId: string,
+  documentId: string,
+  assetId: string,
+  extension: string
+) {
+  return `${userId}/${documentId}/${assetId}/source.${extension}`;
 }
 
 export type MaterialImageExtension = "avif" | "gif" | "jpg" | "png" | "webp";

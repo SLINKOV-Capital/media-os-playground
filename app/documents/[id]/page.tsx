@@ -2,7 +2,7 @@ import { generateActions, updateDocumentTitle } from "@/app/documents/actions";
 import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
 import { DeleteDocumentButton } from "@/components/DeleteDocumentButton";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
-import { DocumentPublicationImagesBlock } from "@/components/DocumentPublicationImagesBlock";
+import { DocumentImageIssuesBlock } from "@/components/DocumentImageIssuesBlock";
 import { DocumentRecommendationsBlock } from "@/components/DocumentRecommendationsBlock";
 import { DocumentSiteBlock } from "@/components/DocumentSiteBlock";
 import { DocumentTermsBlock } from "@/components/DocumentTermsBlock";
@@ -18,7 +18,7 @@ import {
   collectMaterialIdsFromLinkRows,
   mapDocumentMaterialsFromRows,
 } from "@/lib/mapDocumentMaterials";
-import type { Document, DocumentPublicationImage, DocumentRecommendation, DocumentTerm, Material, WorkflowTemplateV2 } from "@/lib/types";
+import type { Document, DocumentImageIssue, DocumentRecommendation, DocumentTerm, Material, WorkflowTemplateV2 } from "@/lib/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -65,7 +65,7 @@ export default async function DocumentPage({
   const [
     { data: actionsData },
     { data: documentMaterialsData },
-    { data: publicationImagesData },
+    { data: imageIssuesData },
     { data: recommendationsData },
     { data: termsData },
     { data: candidateDocumentsData },
@@ -83,11 +83,11 @@ export default async function DocumentPage({
         .eq("document_id", id)
         .eq("user_id", user.id),
       supabase
-        .from("document_publication_images")
-        .select("*, source_material:materials(id, title)")
+        .from("document_image_issues")
+        .select("*")
         .eq("document_id", id)
         .eq("user_id", user.id)
-        .order("sort_order", { ascending: true }),
+        .order("image_number", { ascending: true }),
       supabase
         .from("document_recommendations")
         .select("*, recommended_document:documents!document_recommendations_recommended_document_id_fkey(id, title)")
@@ -191,11 +191,13 @@ export default async function DocumentPage({
 
           <DocumentSiteBlock document={document} />
 
-          <DocumentPublicationImagesBlock
-            documentId={document.id}
-            assets={(publicationImagesData ?? []) as DocumentPublicationImage[]}
-            materials={materials}
-          />
+          {(imageIssuesData?.length ?? 0) > 0 ? (
+            <DocumentImageIssuesBlock
+              documentId={document.id}
+              issues={(imageIssuesData ?? []) as DocumentImageIssue[]}
+              materials={materials}
+            />
+          ) : null}
 
           <DocumentRecommendationsBlock
             documentId={document.id}

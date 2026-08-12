@@ -4750,6 +4750,22 @@ h1.page-title-static {
   border-radius: var(--radius);
 }
 
+.public-article-figure {
+  margin: 1.5em 0 2em;
+}
+
+.public-article-figure img {
+  display: block;
+  width: 100%;
+}
+
+.public-article-figcaption {
+  margin-top: 8px;
+  color: var(--public-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .section-header {
   display: flex;
   align-items: center;
@@ -5498,6 +5514,114 @@ h1.page-title-static {
   margin: 0;
   font-size: 13px;
   color: var(--muted-color, #6e6a63);
+}
+
+.document-markdown-import {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.document-markdown-import h3,
+.document-image-issue h3 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.document-markdown-import label {
+  display: grid;
+  gap: 6px;
+}
+
+.document-markdown-import label > span,
+.document-import-progress {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.document-import-progress {
+  margin: 0;
+}
+
+.document-import-help {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.document-import-picker {
+  display: inline-flex;
+  width: fit-content;
+  cursor: pointer;
+}
+
+.doc-site-slug-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.doc-site-slug-field > span {
+  color: var(--text-muted);
+}
+
+.doc-site-slug-field input {
+  flex: 1;
+  min-width: 0;
+}
+
+.document-image-issues {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.document-image-issue {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.document-image-issue dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.document-image-issue dl > div {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.document-image-issue dt {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.document-image-issue dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.document-image-issue-actions,
+.document-image-issue-actions form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.document-image-issue-actions label.ghost-button {
+  display: inline-flex;
+  cursor: pointer;
 }
 
 .publication-image-add-row,

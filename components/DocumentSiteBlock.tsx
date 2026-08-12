@@ -11,6 +11,7 @@ import {
 import { formatActionError } from "@/lib/actionResult";
 import { publicDocumentPath, siteStatusLabel } from "@/lib/site";
 import type { Document } from "@/lib/types";
+import { DocumentMarkdownImport } from "@/components/DocumentMarkdownImport";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
@@ -235,6 +236,16 @@ export function DocumentSiteBlock({ document }: DocumentSiteBlockProps) {
           {isPending ? "Сохранение…" : "Сохранить текст"}
         </button>
       </div>
+
+      <DocumentMarkdownImport
+        documentId={document.id}
+        disabled={isPending}
+        onImported={(nextContent) => {
+          setContentMd(nextContent);
+          lastSavedContent.current = nextContent;
+          router.refresh();
+        }}
+      />
 
       <label className="doc-site-featured">
         <input

@@ -71,7 +71,7 @@ async function getMaterialSource(
   return { ok: true, source, title: material.title };
 }
 
-async function uploadPreparedImage({
+export async function uploadPreparedImage({
   documentId,
   userId,
   assetId,

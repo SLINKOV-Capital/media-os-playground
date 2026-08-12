@@ -116,6 +116,19 @@ export type DocumentPublicationImage = {
   source_material?: Pick<Material, "id" | "title"> | null;
 };
 
+export type DocumentImageIssue = {
+  id: string;
+  user_id: string;
+  document_id: string;
+  image_number: number;
+  alt: string;
+  title: string | null;
+  original_src: string;
+  reason: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ActionMaterial = {
   id: string;
   action_id: string;
