@@ -4,11 +4,13 @@ export type ActionResult =
       ok: false;
       error:
         | "duplicate_title"
+        | "duplicate_slug"
         | "duplicate_type"
         | "empty"
         | "empty_content"
         | "last_document"
         | "invalid_type"
+        | "invalid_slug"
         | "not_found"
         | "published_locked"
         | "type_in_use";
@@ -20,11 +22,13 @@ export const ACTION_ERROR_MESSAGES: Record<
   string
 > = {
   duplicate_title: "Такое название уже существует",
+  duplicate_slug: "Такой адрес страницы уже занят",
   duplicate_type: "Такой тип документа уже существует",
   empty: "Название не может быть пустым",
   empty_content: "Добавьте текст перед публикацией",
   last_document: "Нельзя оставить материал без документов",
   invalid_type: "Выберите тип из существующих шаблонов",
+  invalid_slug: "Используйте латинские буквы, цифры и дефисы",
   not_found: "Не найдено",
   published_locked:
     "Нельзя изменить: документ уже публиковался на сайте",

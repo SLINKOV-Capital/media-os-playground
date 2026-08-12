@@ -6,12 +6,13 @@ import {
   unpublishDocument,
   updateDocumentContentMd,
   updateDocumentPreview,
+  updateDocumentSiteSlug,
 } from "@/app/documents/actions";
 import { formatActionError } from "@/lib/actionResult";
 import { publicDocumentPath, siteStatusLabel } from "@/lib/site";
 import type { Document } from "@/lib/types";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 type DocumentSiteBlockProps = {
   document: Document;
@@ -23,9 +24,27 @@ export function DocumentSiteBlock({ document }: DocumentSiteBlockProps) {
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState(document.preview ?? "");
   const [contentMd, setContentMd] = useState(document.content_md ?? "");
+  const [siteSlug, setSiteSlug] = useState(document.site_slug ?? "");
   const [featured, setFeatured] = useState(document.site_featured);
   const lastSavedPreview = useRef(document.preview ?? "");
   const lastSavedContent = useRef(document.content_md ?? "");
+  const lastSavedSlug = useRef(document.site_slug ?? "");
+
+  useEffect(() => {
+    const nextContent = document.content_md ?? "";
+    if (nextContent !== lastSavedContent.current) {
+      setContentMd(nextContent);
+      lastSavedContent.current = nextContent;
+    }
+  }, [document.content_md]);
+
+  useEffect(() => {
+    const nextSlug = document.site_slug ?? "";
+    if (nextSlug !== lastSavedSlug.current) {
+      setSiteSlug(nextSlug);
+      lastSavedSlug.current = nextSlug;
+    }
+  }, [document.site_slug]);
 
   const isPublished = document.site_status === "published";
   const publicUrl =
@@ -85,6 +104,20 @@ export function DocumentSiteBlock({ document }: DocumentSiteBlockProps) {
         lastSavedContent.current = contentMd;
       }
 
+      return result;
+    });
+  }
+
+  function saveSlug() {
+    const normalized = siteSlug.trim().toLocaleLowerCase("en").replace(/^\/?p\//, "");
+    if (normalized === lastSavedSlug.current) return;
+    setSiteSlug(normalized);
+    runAction(async () => {
+      const formData = new FormData();
+      formData.set("id", document.id);
+      formData.set("site_slug", normalized);
+      const result = await updateDocumentSiteSlug(formData);
+      if (result.ok) lastSavedSlug.current = normalized;
       return result;
     });
   }
@@ -150,6 +183,21 @@ export function DocumentSiteBlock({ document }: DocumentSiteBlockProps) {
           </a>
         </p>
       )}
+
+      <label className="doc-site-field-label" htmlFor={`doc-slug-${document.id}`}>
+        Адрес страницы
+      </label>
+      <div className="doc-site-slug-field">
+        <span>/p/</span>
+        <input
+          id={`doc-slug-${document.id}`}
+          value={siteSlug}
+          disabled={isPending}
+          placeholder="создастся из названия"
+          onChange={(event) => setSiteSlug(event.target.value)}
+          onBlur={saveSlug}
+        />
+      </div>
 
       <label className="doc-site-field-label" htmlFor={`doc-preview-${document.id}`}>
         Краткое описание (preview)

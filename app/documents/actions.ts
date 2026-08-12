@@ -408,6 +408,53 @@ export async function updateDocumentPreview(
   return { ok: true };
 }
 
+export async function updateDocumentSiteSlug(
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect(COCKPIT_LOGIN_PATH);
+
+  const id = String(formData.get("id") ?? "");
+  const slug = String(formData.get("site_slug") ?? "")
+    .trim()
+    .toLocaleLowerCase("en")
+    .replace(/^\/?p\//, "");
+  if (!id) return { ok: false, error: "not_found" };
+  if (slug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    return { ok: false, error: "invalid_slug" };
+  }
+
+  const document = await getOwnedDocument(supabase, user.id, id);
+  if (!document) return { ok: false, error: "not_found" };
+
+  if (slug) {
+    const { data: conflict } = await supabase
+      .from("documents")
+      .select("id")
+      .eq("site_slug", slug)
+      .neq("id", id)
+      .limit(1)
+      .maybeSingle();
+    if (conflict) return { ok: false, error: "duplicate_slug" };
+  }
+
+  const previousSlug = document.site_slug;
+  const { error } = await supabase
+    .from("documents")
+    .update({ site_slug: slug || null })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) {
+    console.error("Failed to update Document slug:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  revalidateDocument(id, previousSlug);
+  revalidateDocument(id, slug || null);
+  return { ok: true };
+}
+
 export async function publishDocument(
   formData: FormData
 ): Promise<ActionResult> {
