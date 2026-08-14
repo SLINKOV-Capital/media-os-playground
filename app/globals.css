@@ -2392,6 +2392,14 @@ h1.page-title-static {
   line-height: 1.5;
 }
 
+@media (max-width: 1199px) {
+  /* overflow-x:hidden on html/body breaks the sticky mobile header */
+  html:has(.public-site),
+  body:has(.public-site) {
+    overflow-x: clip;
+  }
+}
+
 .public-header {
   position: sticky;
   top: 0;
