@@ -5,6 +5,7 @@ import type { Components } from "react-markdown";
 import { remarkRussianTypography } from "@/lib/remarkRussianTypography";
 import remarkGfm from "remark-gfm";
 import remarkDirective from "remark-directive";
+import { remarkNumberedListDirectives } from "@/lib/remarkNumberedListDirectives";
 import { remarkTermDirectives } from "@/lib/remarkTermDirectives";
 
 type MarkdownContentProps = {
@@ -14,10 +15,16 @@ type MarkdownContentProps = {
   typographyLocale?: "ru";
 };
 
-const baseRemarkPlugins = [remarkGfm, remarkDirective, remarkTermDirectives];
+const baseRemarkPlugins = [
+  remarkGfm,
+  remarkDirective,
+  remarkNumberedListDirectives,
+  remarkTermDirectives,
+];
 const russianRemarkPlugins = [
   remarkGfm,
   remarkDirective,
+  remarkNumberedListDirectives,
   remarkTermDirectives,
   remarkRussianTypography,
 ];

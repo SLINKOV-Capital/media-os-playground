@@ -25,10 +25,12 @@ export const DEMO_ARTICLE = {
 
 ## Как разжевать без потери смысла
 
+:::numbered-list
 1. Сначала назвать задачу человека, а не модель.
 2. Показать один конкретный шаг, который можно повторить.
 3. Только потом — ограничения и нюансы.
 4. В конце — критерий «получилось / не получилось».
+:::
 
 Так текст становится картой, а не витриной. Корпоративный **сторителлинг** работает так же: сначала конфликт и герой, потом слайды.
 
@@ -48,10 +50,12 @@ Writers either drown in jargon or smooth everything into empty metaphors. Both l
 
 ## How to explain without losing meaning
 
+:::numbered-list
 1. Name the human task first, not the model.
 2. Show one concrete step the reader can repeat.
 3. Only then add limits and nuance.
 4. End with a “worked / did not work” criterion.
+:::
 
 Then the text becomes a map, not a shop window. Corporate **storytelling** works the same way: conflict and character first, slides later.
 `,
@@ -63,10 +67,12 @@ O nos ahogamos en jerga, o suavizamos todo hasta metáforas vacías. En ambos ca
 
 ## Cómo explicar sin perder sentido
 
+:::numbered-list
 1. Nombrar primero la tarea humana, no el modelo.
 2. Mostrar un paso concreto que se pueda repetir.
 3. Solo después, límites y matices.
 4. Cerrar con un criterio de “salió / no salió”.
+:::
 
 Así el texto es un mapa, no un escaparate. El **storytelling** corporativo funciona igual: primero conflicto y personaje, después las diapositivas.
 `,

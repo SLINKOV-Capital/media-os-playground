@@ -4390,9 +4390,8 @@ h1.page-title-static {
   color: var(--public-accent);
 }
 
-/* Article lists — same circle language as «Начните отсюда» */
-.public-article-content ol,
-.public-article-content ul {
+/* Explicit numbered lists — same circle language as «Начните отсюда» */
+.public-article-numbered-list > ol {
   list-style: none;
   margin: 1.4em 0;
   padding: 0;
@@ -4400,8 +4399,7 @@ h1.page-title-static {
   gap: 1rem;
 }
 
-.public-article-content ol > li,
-.public-article-content ul > li {
+.public-article-numbered-list > ol > li {
   position: relative;
   padding-left: calc(clamp(2.75rem, 5.5vw, 4rem) + 1rem);
   min-height: clamp(2.75rem, 5.5vw, 4rem);
@@ -4409,16 +4407,15 @@ h1.page-title-static {
   align-items: center;
 }
 
-.public-article-content ol {
+.public-article-numbered-list > ol {
   counter-reset: article-ol;
 }
 
-.public-article-content ol > li {
+.public-article-numbered-list > ol > li {
   counter-increment: article-ol;
 }
 
-.public-article-content ol > li::before,
-.public-article-content ul > li::before {
+.public-article-numbered-list > ol > li::before {
   box-sizing: border-box;
   position: absolute;
   left: 0;
@@ -4437,13 +4434,8 @@ h1.page-title-static {
   color: var(--public-ink);
 }
 
-.public-article-content ol > li::before {
+.public-article-numbered-list > ol > li::before {
   content: counter(article-ol);
-}
-
-.public-article-content ul > li::before {
-  content: "";
-  background: radial-gradient(circle, currentColor 0 22%, transparent 23%);
 }
 
 .public-recommended {
