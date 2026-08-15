@@ -9,7 +9,7 @@ import {
   updateDocumentSiteSlug,
 } from "@/app/documents/actions";
 import { formatActionError } from "@/lib/actionResult";
-import { publicDocumentPath, siteStatusLabel } from "@/lib/site";
+import { publicDocumentPathForType, publicDocumentSection, siteStatusLabel } from "@/lib/site";
 import type { Document } from "@/lib/types";
 import { DocumentMarkdownImport } from "@/components/DocumentMarkdownImport";
 import { useRouter } from "next/navigation";
@@ -50,7 +50,11 @@ export function DocumentSiteBlock({ document }: DocumentSiteBlockProps) {
   const isPublished = document.site_status === "published";
   const publicUrl =
     isPublished && document.site_slug
-      ? publicDocumentPath(document.site_slug)
+      ? publicDocumentPathForType(
+          document.site_slug,
+          document.document_type,
+          document.site_locale
+        )
       : null;
 
   function runAction(action: () => Promise<{ ok: boolean; error?: string }>) {
@@ -189,7 +193,7 @@ export function DocumentSiteBlock({ document }: DocumentSiteBlockProps) {
         Адрес страницы
       </label>
       <div className="doc-site-slug-field">
-        <span>/p/</span>
+        <span>/ru/{publicDocumentSection(document.document_type) ?? ""}/</span>
         <input
           id={`doc-slug-${document.id}`}
           value={siteSlug}

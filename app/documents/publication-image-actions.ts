@@ -10,6 +10,7 @@ import {
   getDocumentImagePublicUrl,
 } from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/server";
+import { publicCandidateDocumentPaths } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 
 type PublicationImageResult =
@@ -36,7 +37,9 @@ async function getContext(documentId: string) {
 
 function revalidatePublicationImagePaths(documentId: string, siteSlug: string | null) {
   revalidatePath(`/documents/${documentId}`);
-  if (siteSlug) revalidatePath(`/p/${siteSlug}`);
+  if (siteSlug) {
+    for (const path of publicCandidateDocumentPaths(siteSlug)) revalidatePath(path);
+  }
 }
 
 async function getMaterialSource(

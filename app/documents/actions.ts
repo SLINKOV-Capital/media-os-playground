@@ -7,6 +7,7 @@ import { deriveMaterialPreviewUrl } from "@/lib/materialPreview";
 import { syncDocumentImageIssues } from "@/lib/documentImageIssuesServer";
 import { importCloudMailImagePreview } from "@/lib/materialPreviewImport";
 import { slugifyTitle, withSlugSuffix } from "@/lib/slugify";
+import { publicCandidateDocumentPaths } from "@/lib/site";
 import {
   getMaterialPreviewPublicUrl,
   MATERIAL_IMAGES_BUCKET,
@@ -19,12 +20,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 function revalidateSitePaths(slug?: string | null) {
-  revalidatePath("/");
-  revalidatePath("/articles");
-  revalidatePath("/stories");
+  revalidatePath("/ru");
+  revalidatePath("/ru/articles");
+  revalidatePath("/ru/stories");
+  revalidatePath("/sitemap.xml");
 
   if (slug) {
-    revalidatePath(`/p/${slug}`);
+    for (const path of publicCandidateDocumentPaths(slug)) {
+      revalidatePath(path);
+    }
   }
 }
 
@@ -170,6 +174,7 @@ async function findPublishedSlugConflict(
     .from("documents")
     .select("id")
     .eq("site_status", "published")
+    .eq("site_locale", "ru")
     .eq("site_slug", slug);
 
   if (error) {
@@ -216,7 +221,7 @@ async function getOwnedDocument(
   const { data, error } = await supabase
     .from("documents")
     .select(
-      "id, title, site_status, site_slug, site_published_at, site_featured"
+      "id, title, site_status, site_locale, site_slug, site_published_at, site_featured"
     )
     .eq("id", documentId)
     .eq("user_id", userId)
@@ -440,6 +445,7 @@ export async function updateDocumentSiteSlug(
     const { data: conflict } = await supabase
       .from("documents")
       .select("id")
+      .eq("site_locale", document.site_locale)
       .eq("site_slug", slug)
       .neq("id", id)
       .limit(1)

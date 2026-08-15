@@ -1,3 +1,5 @@
+import { publicDocumentPath } from "@/lib/site";
+
 export type DemoTerm = {
   id: string;
   lemma: string;
@@ -86,7 +88,7 @@ export const DEMO_TERMS: DemoTerm[] = [
       "Запрос к модели: формулировка задачи, контекста и ограничений так, чтобы ответ был полезен и проверяем.",
     explainedIn: {
       title: "Редакция с ИИ: что оставить человеку",
-      href: "/p/demo-article",
+      href: publicDocumentPath("demo-article", "articles"),
     },
   },
   {
@@ -96,7 +98,7 @@ export const DEMO_TERMS: DemoTerm[] = [
       "Проверка утверждений на факты до публикации: цифры, цитаты, ссылки, границы уверенности модели.",
     explainedIn: {
       title: "Редакция с ИИ: что оставить человеку",
-      href: "/p/demo-article",
+      href: publicDocumentPath("demo-article", "articles"),
     },
   },
   {
@@ -106,7 +108,7 @@ export const DEMO_TERMS: DemoTerm[] = [
       "Сборка смысла через историю: герой, конфликт, поворот, вывод — вместо перечня преимуществ.",
     explainedIn: {
       title: "Корпоративный сторителлинг без новояза",
-      href: "/p/demo-article",
+      href: publicDocumentPath("demo-article", "articles"),
     },
   },
   {
@@ -116,7 +118,7 @@ export const DEMO_TERMS: DemoTerm[] = [
       "Сборка продукта в диалоге с ИИ-кодом: быстро, итеративно, с человеком, который держит вкус и ответственность.",
     explainedIn: {
       title: "Одна тема — много форматов",
-      href: "/p/demo-article",
+      href: publicDocumentPath("demo-article", "articles"),
     },
   },
 ];
@@ -124,28 +126,28 @@ export const DEMO_TERMS: DemoTerm[] = [
 /** Demo related cards — Medium-style grid until DB related is wired. */
 export const DEMO_RELATED_ARTICLES = [
   {
-    href: "/p/demo-article",
+    href: publicDocumentPath("demo-article", "articles"),
     title: "Редакция с ИИ: что оставить человеку",
     preview:
       "Черновик, фактчек, тон, публикация — где модель ускоряет, а где решение всё ещё за автором.",
     image: "/brand/maska.webp",
   },
   {
-    href: "/p/demo-article",
+    href: publicDocumentPath("demo-article", "articles"),
     title: "Одна тема — много форматов",
     preview:
       "Статья, видео и шортс по одной теме — разные проекты. Как не смешивать каналы и не терять смысл.",
     image: "/brand/orkestr.webp",
   },
   {
-    href: "/p/demo-article",
+    href: publicDocumentPath("demo-article", "articles"),
     title: "Разжёванное сложное: зачем объяснять ИИ человеческим языком",
     preview:
       "Если сложное не разжевать, оно остаётся чужим. Как строить тексты, которые оставляют читателю ясность.",
     image: "/brand/chitatel.webp",
   },
   {
-    href: "/p/demo-article",
+    href: publicDocumentPath("demo-article", "articles"),
     title: "Корпоративный сторителлинг без новояза",
     preview:
       "Почему одни компании запоминаются, а другие только перечисляют преимущества.",

@@ -23,6 +23,7 @@ export type Task = {
 };
 
 export type SiteStatus = "draft" | "published";
+export type SiteLocale = "ru" | "en" | "es";
 
 export type Document = {
   id: string;
@@ -32,6 +33,7 @@ export type Document = {
   content_md: string | null;
   preview: string | null;
   site_status: SiteStatus;
+  site_locale: SiteLocale;
   site_slug: string | null;
   site_published_at: string | null;
   site_featured: boolean;
@@ -47,6 +49,7 @@ export type PublicDocument = Pick<
   | "document_type"
   | "preview"
   | "content_md"
+  | "site_locale"
   | "site_slug"
   | "site_published_at"
   | "site_featured"

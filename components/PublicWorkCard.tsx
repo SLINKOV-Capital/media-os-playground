@@ -1,5 +1,5 @@
 import type { PlaceholderItem } from "@/lib/publicContent";
-import { publicDocumentPath } from "@/lib/site";
+import { publicDocumentPathForType } from "@/lib/site";
 import type { PublicDocument } from "@/lib/types";
 import Link from "next/link";
 
@@ -39,7 +39,11 @@ export function workFromDocument(document: PublicDocument): PublicWorkCardProps 
     title: document.title,
     type: document.document_type,
     preview: document.preview,
-    href: publicDocumentPath(document.site_slug),
+    href: publicDocumentPathForType(
+      document.site_slug,
+      document.document_type,
+      document.site_locale
+    ),
   };
 }
 

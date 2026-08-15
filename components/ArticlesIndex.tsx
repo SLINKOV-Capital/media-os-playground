@@ -31,7 +31,7 @@ export function ArticlesIndex({
 
         <ul className="public-articles-list">
           {items.map((item) => {
-            const href = item.href ?? `/p/${item.slug}`;
+            const href = item.href ?? `${section.path}/${item.slug}`;
 
             return (
               <li key={item.slug} className="public-articles-item">

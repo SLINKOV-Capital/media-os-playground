@@ -1,16 +1,22 @@
 /** Homepage content below the hero. Notes in author briefs are not stored here. */
 
+import {
+  publicDocumentPath,
+  publicHomePath,
+  publicSectionPath,
+} from "@/lib/site";
+
 export const HOME_ABOUT_LINKS_ROW1 = [
-  { href: "/articles", label: "Статьи" },
-  { href: "/stories", label: "Истории" },
-  { href: "/books", label: "Книги" },
+  { href: publicSectionPath("articles"), label: "Статьи" },
+  { href: publicSectionPath("stories"), label: "Истории" },
+  { href: publicSectionPath("books"), label: "Книги" },
 ] as const;
 
 export const HOME_ABOUT_LINKS_ROW2 = [
-  { href: "/plays", label: "Пьесы" },
-  { href: "/video", label: "Подкаст" },
-  { href: "/#seminars", label: "Семинары" },
-  { href: "/#seminars", label: "Концерты" },
+  { href: publicSectionPath("plays"), label: "Пьесы" },
+  { href: publicSectionPath("video"), label: "Подкаст" },
+  { href: `${publicHomePath()}#seminars`, label: "Семинары" },
+  { href: `${publicHomePath()}#seminars`, label: "Концерты" },
 ] as const;
 
 export const HOME_ABOUT_LINKS = [
@@ -20,19 +26,25 @@ export const HOME_ABOUT_LINKS = [
 
 export const HOME_START_HERE = [
   {
-    href: "/p/chem-otlichaetsya-trablshuter-ot-konsultanta",
+    href: publicDocumentPath(
+      "chem-otlichayetsya-trablshuter-ot-konsultanta",
+      "articles"
+    ),
     title: "Чем отличается траблшутер от консультанта",
     preview:
       "Почему эксперт — это не профессия, а способ смотреть на проблему.",
   },
   {
-    href: "/p/kak-skonstruirovat-interesnuyu-istoriyu",
+    href: publicDocumentPath(
+      "kak-sdelat-interesnuyu-istoriyu-iz-skuchnyh-faktov",
+      "articles"
+    ),
     title: "Как сконструировать интересную историю",
     preview:
       "Почему сторителлинг — это не украшение текста, а инструмент мышления.",
   },
   {
-    href: "/p/kuzka",
+    href: publicDocumentPath("kuzka", "stories"),
     title: "Кузька",
     preview:
       "Я люблю тебя! Люблю как старики любят собственную молодость. Всё время хочется вернуть.",

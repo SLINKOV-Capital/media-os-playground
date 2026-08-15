@@ -13,6 +13,7 @@ export function publicSectionMetadata(section: PublicSection): Metadata {
   return {
     title: `${section.title} — SLINKOV MEDIA`,
     description: section.intro,
+    alternates: { canonical: section.path },
   };
 }
 

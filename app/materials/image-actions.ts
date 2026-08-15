@@ -7,6 +7,7 @@ import {
   materialImageStoragePath,
 } from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/server";
+import { publicCandidateDocumentPaths } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 
 const ALLOWED_EXTENSIONS = new Set<MaterialImageExtension>([
@@ -210,7 +211,11 @@ export async function saveMaterialImageUpload(
     revalidatePath(`/documents/${link.document_id}`);
     const embedded = link.documents;
     const document = Array.isArray(embedded) ? embedded[0] : embedded;
-    if (document?.site_slug) revalidatePath(`/p/${document.site_slug}`);
+    if (document?.site_slug) {
+      for (const path of publicCandidateDocumentPaths(document.site_slug)) {
+        revalidatePath(path);
+      }
+    }
   }
 
   return { ok: true };

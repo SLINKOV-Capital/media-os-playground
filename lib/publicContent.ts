@@ -1,19 +1,21 @@
+import { publicDocumentPath, publicHomePath, publicSectionPath } from "@/lib/site";
+
 export const PUBLIC_NAV = [
-  { href: "/articles", label: "Статьи" },
-  { href: "/stories", label: "Истории" },
-  { href: "/books", label: "Книги" },
-  { href: "/plays", label: "Пьесы" },
-  { href: "/video", label: "Подкаст" },
-  { href: "/#seminars", label: "Семинары" },
-  { href: "/#seminars", label: "Концерты" },
+  { href: publicSectionPath("articles"), label: "Статьи" },
+  { href: publicSectionPath("stories"), label: "Истории" },
+  { href: publicSectionPath("books"), label: "Книги" },
+  { href: publicSectionPath("plays"), label: "Пьесы" },
+  { href: publicSectionPath("video"), label: "Подкаст" },
+  { href: `${publicHomePath()}#seminars`, label: "Семинары" },
+  { href: `${publicHomePath()}#seminars`, label: "Концерты" },
 ] as const;
 
 /** Compact horizontal bar (≥1200px): subset of sections. */
 export const PUBLIC_DESKTOP_NAV = [
-  { href: "/articles", label: "Статьи" },
-  { href: "/stories", label: "Истории" },
-  { href: "/books", label: "Книги" },
-  { href: "/#seminars", label: "Семинары" },
+  { href: publicSectionPath("articles"), label: "Статьи" },
+  { href: publicSectionPath("stories"), label: "Истории" },
+  { href: publicSectionPath("books"), label: "Книги" },
+  { href: `${publicHomePath()}#seminars`, label: "Семинары" },
 ] as const;
 
 export type PublicSectionId =
@@ -46,7 +48,7 @@ export type PublicSection = {
 export const PUBLIC_SECTIONS: PublicSection[] = [
   {
     id: "articles",
-    path: "/articles",
+    path: publicSectionPath("articles"),
     title: "Статьи",
     eyebrow: "(Статьи)",
     intro:
@@ -58,7 +60,7 @@ export const PUBLIC_SECTIONS: PublicSection[] = [
         type: "Статья",
         preview:
           "Если сложное не разжевать, оно остаётся чужим. Как строить тексты, которые оставляют читателю ясность, а не впечатление.",
-        href: "/p/demo-article",
+        href: publicDocumentPath("demo-article", "articles"),
         image: "/brand/chitatel.webp",
       },
       {
@@ -67,7 +69,7 @@ export const PUBLIC_SECTIONS: PublicSection[] = [
         type: "Статья",
         preview:
           "Черновик, фактчек, тон, публикация — где модель ускоряет, а где решение всё ещё за автором.",
-        href: "/p/demo-article",
+        href: publicDocumentPath("demo-article", "articles"),
         image: "/brand/maska.webp",
       },
       {
@@ -76,14 +78,14 @@ export const PUBLIC_SECTIONS: PublicSection[] = [
         type: "Статья",
         preview:
           "Статья, видео и шортс по одной теме — разные проекты. Как не смешивать каналы и не терять смысл.",
-        href: "/p/demo-article",
+        href: publicDocumentPath("demo-article", "articles"),
         image: "/brand/orkestr.webp",
       },
     ],
   },
   {
     id: "stories",
-    path: "/stories",
+    path: publicSectionPath("stories"),
     title: "Рассказы",
     eyebrow: "(Рассказы)",
     intro:
@@ -114,7 +116,7 @@ export const PUBLIC_SECTIONS: PublicSection[] = [
   },
   {
     id: "books",
-    path: "/books",
+    path: publicSectionPath("books"),
     title: "Книги",
     eyebrow: "(Книги)",
     intro:
@@ -138,7 +140,7 @@ export const PUBLIC_SECTIONS: PublicSection[] = [
   },
   {
     id: "plays",
-    path: "/plays",
+    path: publicSectionPath("plays"),
     title: "Пьесы",
     eyebrow: "(Пьесы)",
     intro: "Диалоги и сцены, где технология — не декорация, а действующее лицо.",
@@ -161,7 +163,7 @@ export const PUBLIC_SECTIONS: PublicSection[] = [
   },
   {
     id: "videos",
-    path: "/video",
+    path: publicSectionPath("video"),
     title: "Подкаст",
     eyebrow: "(Подкаст)",
     intro: "Разборы, эфиры и короткие ролики — отдельные документы, не «каналы» одной статьи.",
@@ -191,7 +193,7 @@ export const PUBLIC_SECTIONS: PublicSection[] = [
   },
   {
     id: "glossary",
-    path: "/glossary",
+    path: publicSectionPath("glossary"),
     title: "Тезаурус",
     eyebrow: "(Тезаурус)",
     intro:
@@ -229,7 +231,7 @@ export const PUBLIC_SECTIONS: PublicSection[] = [
   },
   {
     id: "presentations",
-    path: "/presentations",
+    path: publicSectionPath("presentations"),
     title: "Презентации",
     eyebrow: "(Презентации)",
     intro: "Слайды для выступлений и внутренних сессий — сжатая мысль, а не стена текста.",

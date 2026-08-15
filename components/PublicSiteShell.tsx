@@ -57,7 +57,7 @@ export function PublicSiteShell({
     >
       <header className="public-header">
         <Link
-          href="/"
+          href="/ru"
           className="public-logo"
           onClick={() => setMenuOpen(false)}
         >

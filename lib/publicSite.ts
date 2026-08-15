@@ -1,7 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import {
+  DEFAULT_PUBLIC_LOCALE,
   LATEST_PUBLISHED_LIMIT,
+  publicDocumentPathForType,
   publicDocumentSection,
+  type PublicLocale,
   type PublicDocumentSection,
 } from "@/lib/site";
 import type {
@@ -53,9 +56,10 @@ export async function fetchFeaturedPublishedDocuments(): Promise<PublicDocument[
   const { data, error } = await supabase
     .from("documents")
     .select(
-      "id, title, document_type, preview, content_md, site_slug, site_published_at, site_featured"
+      "id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured"
     )
     .eq("site_status", "published")
+    .eq("site_locale", DEFAULT_PUBLIC_LOCALE)
     .eq("site_featured", true)
     .order("site_published_at", { ascending: false });
 
@@ -73,9 +77,10 @@ export async function fetchLatestPublishedDocuments(): Promise<PublicDocument[]>
   const { data, error } = await supabase
     .from("documents")
     .select(
-      "id, title, document_type, preview, content_md, site_slug, site_published_at, site_featured"
+      "id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured"
     )
     .eq("site_status", "published")
+    .eq("site_locale", DEFAULT_PUBLIC_LOCALE)
     .order("site_published_at", { ascending: false })
     .limit(LATEST_PUBLISHED_LIMIT);
 
@@ -88,16 +93,18 @@ export async function fetchLatestPublishedDocuments(): Promise<PublicDocument[]>
 }
 
 export async function fetchPublishedDocumentsBySection(
-  section: Exclude<PublicDocumentSection, null>
+  section: Exclude<PublicDocumentSection, null>,
+  locale: PublicLocale = DEFAULT_PUBLIC_LOCALE
 ): Promise<PublicDocument[]> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("documents")
     .select(
-      "id, title, document_type, preview, content_md, site_slug, site_published_at, site_featured"
+      "id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured"
     )
     .eq("site_status", "published")
+    .eq("site_locale", locale)
     .order("site_published_at", { ascending: false });
 
   if (error) {
@@ -113,16 +120,18 @@ export async function fetchPublishedDocumentsBySection(
 }
 
 export async function fetchPublishedDocumentBySlug(
-  slug: string
+  slug: string,
+  locale: PublicLocale = DEFAULT_PUBLIC_LOCALE
 ): Promise<PublicDocument | null> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("documents")
     .select(
-      "id, title, document_type, preview, content_md, site_slug, site_published_at, site_featured"
+      "id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured"
     )
     .eq("site_status", "published")
+    .eq("site_locale", locale)
     .eq("site_slug", slug)
     .maybeSingle();
 
@@ -132,6 +141,28 @@ export async function fetchPublishedDocumentBySlug(
   }
 
   return (data as PublicDocument | null) ?? null;
+}
+
+export async function fetchPublishedDocumentsForSitemap(): Promise<
+  PublicDocument[]
+> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("documents")
+    .select(
+      "id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured"
+    )
+    .eq("site_status", "published")
+    .eq("site_locale", DEFAULT_PUBLIC_LOCALE)
+    .not("site_slug", "is", null)
+    .order("site_published_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch sitemap documents:", error.message);
+    return [];
+  }
+
+  return (data ?? []) as PublicDocument[];
 }
 
 export async function fetchPublishedDocumentCover(
@@ -189,9 +220,17 @@ export async function fetchPublishedDocumentTerms(
   }
 
   const explainedIds = [...new Set((terms ?? []).map((term) => term.explained_in_document_id).filter((id): id is string => Boolean(id)))];
-  let explainedDocuments: { id: string; title: string; site_slug: string | null }[] = [];
+  let explainedDocuments: {
+    id: string;
+    title: string;
+    document_type: string;
+    site_locale: PublicLocale;
+    site_slug: string | null;
+  }[] = [];
   if (explainedIds.length > 0) {
-    const { data } = await supabase.from("documents").select("id, title, site_slug")
+    const { data } = await supabase
+      .from("documents")
+      .select("id, title, document_type, site_locale, site_slug")
       .in("id", explainedIds).eq("site_status", "published");
     explainedDocuments = data ?? [];
   }
@@ -206,7 +245,14 @@ export async function fetchPublishedDocumentTerms(
       lemma: term.term,
       gloss: term.definition,
       explainedIn: explained?.site_slug
-        ? { title: explained.title, href: `/p/${explained.site_slug}` }
+        ? {
+            title: explained.title,
+            href: publicDocumentPathForType(
+              explained.site_slug,
+              explained.document_type,
+              explained.site_locale
+            ),
+          }
         : undefined,
     };
   });
@@ -230,7 +276,7 @@ export async function fetchPublishedDocumentRecommendations(
   const orderedIds = links.map((link) => link.recommended_document_id);
   const { data: documents, error: documentsError } = await supabase
     .from("documents")
-    .select("id, title, preview, site_slug")
+    .select("id, title, document_type, site_locale, preview, site_slug")
     .in("id", orderedIds)
     .eq("site_status", "published");
   if (documentsError) {
@@ -248,7 +294,11 @@ export async function fetchPublishedDocumentRecommendations(
     const document = published.get(id);
     if (!document?.site_slug) return [];
     return [{
-      href: `/p/${document.site_slug}`,
+      href: publicDocumentPathForType(
+        document.site_slug,
+        document.document_type,
+        document.site_locale
+      ),
       title: document.title,
       preview: document.preview ?? "",
       image: coverById.get(id) ?? null,

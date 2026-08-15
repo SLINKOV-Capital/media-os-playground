@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { publicCandidateDocumentPaths } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 
 type Result = { ok: true } | { ok: false; error: string };
@@ -22,7 +23,9 @@ async function getContext(documentId: string) {
 
 function revalidate(documentId: string, slug: string | null) {
   revalidatePath(`/documents/${documentId}`);
-  if (slug) revalidatePath(`/p/${slug}`);
+  if (slug) {
+    for (const path of publicCandidateDocumentPaths(slug)) revalidatePath(path);
+  }
 }
 
 export async function addDocumentRecommendation(

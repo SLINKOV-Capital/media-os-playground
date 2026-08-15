@@ -12,6 +12,7 @@ import {
   DOCUMENT_IMAGES_BUCKET,
 } from "@/lib/storagePaths";
 import { createClient } from "@/lib/supabase/server";
+import { publicCandidateDocumentPaths } from "@/lib/site";
 import { revalidatePath } from "next/cache";
 import { uploadPreparedImage } from "@/app/documents/publication-image-actions";
 
@@ -34,7 +35,9 @@ async function getContext(documentId: string) {
 
 function refresh(documentId: string, siteSlug: string | null) {
   revalidatePath(`/documents/${documentId}`);
-  if (siteSlug) revalidatePath(`/p/${siteSlug}`);
+  if (siteSlug) {
+    for (const path of publicCandidateDocumentPaths(siteSlug)) revalidatePath(path);
+  }
 }
 
 async function savePublicationImage({

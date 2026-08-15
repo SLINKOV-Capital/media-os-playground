@@ -2,6 +2,7 @@ import { ArticlesIndex } from "@/components/ArticlesIndex";
 import { publicSectionMetadata } from "@/components/PublicSectionPage";
 import { getPublicSection } from "@/lib/publicContent";
 import { fetchPublishedDocumentsBySection } from "@/lib/publicSite";
+import { publicDocumentPath } from "@/lib/site";
 import { notFound } from "next/navigation";
 
 const SECTION_ID = "stories";
@@ -17,7 +18,7 @@ export default async function StoriesPage() {
     title: document.title,
     type: document.document_type,
     preview: document.preview ?? "",
-    href: `/p/${document.site_slug}`,
+    href: publicDocumentPath(document.site_slug!, "stories", document.site_locale),
     image: document.publication_cover?.image_url,
   }));
 

@@ -1,4 +1,4 @@
-import { publicDocumentPath } from "@/lib/site";
+import { publicDocumentPathForType } from "@/lib/site";
 import type { PublicDocument } from "@/lib/types";
 import Link from "next/link";
 
@@ -15,7 +15,13 @@ export function PublicDocumentCard({ document }: PublicDocumentCardProps) {
     <article className="public-doc-card">
       <p className="public-doc-card-type">{document.document_type}</p>
       <h3 className="public-doc-card-title">
-        <Link href={publicDocumentPath(document.site_slug)}>
+        <Link
+          href={publicDocumentPathForType(
+            document.site_slug,
+            document.document_type,
+            document.site_locale
+          )}
+        >
           {document.title}
         </Link>
       </h3>

@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Консультации — SLINKOV MEDIA",
   description:
     "Консультации по ИИ для авторов, редакций и команд: процессы, тексты, ясность без хайпа.",
+  alternates: { canonical: "/ru/consulting" },
 };
 
 export default function ConsultingPage() {

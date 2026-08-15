@@ -11,6 +11,7 @@ const unbounded = Unbounded({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://soloten.com"),
   title: {
     default: "SLINKOV MEDIA",
     template: "%s — SLINKOV MEDIA",

@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "SLINKOV MEDIA — Дмитрий Слиньков",
   description:
     "30 лет сдруживаю компьютеры с людьми. ИИ в бизнесе, рассказы, романы, пьесы, семинары.",
+  alternates: { canonical: "/ru" },
 };
 
 export default function HomePage() {
