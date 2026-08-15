@@ -3,7 +3,7 @@ import { PUBLIC_SITE_EMAIL } from "@/lib/site";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Консультации — SLINKOV MEDIA",
+  title: "Консультации",
   description:
     "Консультации по ИИ для авторов, редакций и команд: процессы, тексты, ясность без хайпа.",
   alternates: { canonical: "/ru/consulting" },

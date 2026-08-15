@@ -13,7 +13,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "SLINKOV MEDIA — Дмитрий Слиньков",
+  title: { absolute: "SLINKOV MEDIA — Дмитрий Слиньков" },
   description:
     "30 лет сдруживаю компьютеры с людьми. ИИ в бизнесе, рассказы, романы, пьесы, семинары.",
   alternates: { canonical: "/ru" },

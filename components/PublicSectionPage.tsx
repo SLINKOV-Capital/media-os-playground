@@ -11,7 +11,7 @@ type PublicSectionPageProps = {
 
 export function publicSectionMetadata(section: PublicSection): Metadata {
   return {
-    title: `${section.title} — SLINKOV MEDIA`,
+    title: section.title,
     description: section.intro,
     alternates: { canonical: section.path },
   };

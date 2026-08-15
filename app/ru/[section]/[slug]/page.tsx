@@ -64,7 +64,7 @@ export async function generateMetadata({
   if (slug === DEMO_ARTICLE.slug && section === "articles") {
     const path = publicDocumentPath(slug, "articles");
     return {
-      title: `${DEMO_ARTICLE.title} — SLINKOV MEDIA`,
+      title: DEMO_ARTICLE.title,
       description: DEMO_ARTICLE.preview,
       alternates: { canonical: path },
     };
