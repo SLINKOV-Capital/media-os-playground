@@ -77,9 +77,49 @@ export function DocumentMarkdownImport({ documentId, disabled, onImported }: Pro
       setStatus({ total: localImages.length, processed: 0, failed: 0 });
       const auth = await getDocumentImageImportUserId();
       if (!auth.ok) throw new Error(auth.error);
+      const userId = auth.userId;
       const supabase = createClient();
       const replacements = new Map<number, string | null>();
       const issues: DocumentImageIssueInput[] = [];
+      const usedFiles = new Set<File>();
+      let uploadedCount = 0;
+
+      async function uploadFile(
+        file: File,
+        imageNumber: number,
+        alt: string,
+        title: string | null
+      ) {
+        const extension = validateMaterialImage(file);
+        const assetId = crypto.randomUUID();
+        const stagingPath = documentImageImportStoragePath(
+          userId,
+          documentId,
+          assetId,
+          extension
+        );
+        const { error } = await supabase.storage
+          .from(DOCUMENT_IMAGE_IMPORTS_BUCKET)
+          .upload(stagingPath, file, {
+            contentType: file.type,
+            cacheControl: "3600",
+            upsert: false,
+          });
+        if (error) throw error;
+        const result = await processStagedDocumentImage({
+          documentId,
+          assetId,
+          imageNumber,
+          alt,
+          title,
+          stagingPath,
+        });
+        if (!result.ok || !result.imageUrl) {
+          throw new Error(result.ok ? "Не получен URL изображения" : result.error);
+        }
+        uploadedCount += 1;
+        return result.imageUrl;
+      }
 
       for (const image of localImages) {
         const match = matchImageFile(image, selectedImages);
@@ -88,36 +128,16 @@ export function DocumentMarkdownImport({ documentId, disabled, onImported }: Pro
           reason = match.reason ?? "Файл не найден";
         } else {
           try {
-            const extension = validateMaterialImage(match.file);
-            const assetId = crypto.randomUUID();
-            const stagingPath = documentImageImportStoragePath(
-              auth.userId,
-              documentId,
-              assetId,
-              extension
+            const imageUrl = await uploadFile(
+              match.file,
+              image.imageNumber,
+              image.alt,
+              image.title
             );
-            const { error } = await supabase.storage
-              .from(DOCUMENT_IMAGE_IMPORTS_BUCKET)
-              .upload(stagingPath, match.file, {
-                contentType: match.file.type,
-                cacheControl: "3600",
-                upsert: false,
-              });
-            if (error) throw error;
-            const result = await processStagedDocumentImage({
-              documentId,
-              assetId,
-              imageNumber: image.imageNumber,
-              alt: image.alt,
-              title: image.title,
-              stagingPath,
-            });
-            if (!result.ok || !result.imageUrl) {
-              throw new Error(result.ok ? "Не получен URL изображения" : result.error);
-            }
+            usedFiles.add(match.file);
             replacements.set(
               image.imageNumber,
-              image.imageNumber === 1 ? null : result.imageUrl
+              image.imageNumber === 1 ? null : imageUrl
             );
           } catch (error) {
             reason = error instanceof Error ? error.message : "Не удалось обработать изображение";
@@ -139,14 +159,49 @@ export function DocumentMarkdownImport({ documentId, disabled, onImported }: Pro
         } : current);
       }
 
+      const unreferencedFiles = selectedImages.filter((file) => !usedFiles.has(file));
+      const namedCoverFiles = unreferencedFiles.filter((file) =>
+        /(^|[\s_-])cover([\s_.-]|$)/i.test(file.name)
+      );
+      const implicitCover = namedCoverFiles.length === 1
+        ? namedCoverFiles[0]
+        : images.length === 0 && unreferencedFiles.length === 1
+          ? unreferencedFiles[0]
+          : null;
+      let coverMessage = "";
+
+      if (implicitCover) {
+        try {
+          await uploadFile(
+            implicitCover,
+            1,
+            implicitCover.name.replace(/\.[^.]+$/, ""),
+            null
+          );
+          usedFiles.add(implicitCover);
+          coverMessage = ` Файл «${implicitCover.name}» использован как обложка.`;
+        } catch (error) {
+          coverMessage = ` Не удалось использовать «${implicitCover.name}» как обложку: ${
+            error instanceof Error ? error.message : "ошибка загрузки"
+          }.`;
+        }
+      }
+
+      const ignoredFiles = selectedImages.filter((file) => !usedFiles.has(file));
+      const ignoredMessage = ignoredFiles.length > 0
+        ? ` Не загружены файлы без ссылки ![…] в тексте: ${ignoredFiles
+            .map((file) => `«${file.name}»`)
+            .join(", ")}.`
+        : "";
+
       const contentMd = replaceMarkdownImages(markdown, replacements);
       const result = await completeDocumentMarkdownImport({ documentId, contentMd, issues });
       if (!result.ok) throw new Error(result.error);
       onImported(contentMd);
       setMessage(
         issues.length === 0
-          ? `Импорт завершён: ${replacements.size} изображений загружено`
-          : `Импорт завершён: ${replacements.size} загружено, ${issues.length} требуют исправления`
+          ? `Импорт завершён: ${uploadedCount} изображений загружено.${coverMessage}${ignoredMessage}`
+          : `Импорт завершён: ${uploadedCount} загружено, ${issues.length} требуют исправления.${coverMessage}${ignoredMessage}`
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Не удалось импортировать Markdown");

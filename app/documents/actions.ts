@@ -497,6 +497,44 @@ export async function publishDocument(
     return { ok: true };
   }
 
+  try {
+    await syncDocumentImageIssues(supabase, user.id, id, content_md);
+  } catch (imageError) {
+    console.error("Failed to synchronize image issues before publishing:", imageError);
+    return { ok: false, error: "not_found" };
+  }
+
+  const [{ count: unresolvedImageCount, error: issuesError }, { data: cover, error: coverError }] =
+    await Promise.all([
+      supabase
+        .from("document_image_issues")
+        .select("id", { count: "exact", head: true })
+        .eq("document_id", id)
+        .eq("user_id", user.id),
+      supabase
+        .from("document_publication_images")
+        .select("id")
+        .eq("document_id", id)
+        .eq("user_id", user.id)
+        .eq("role", "cover")
+        .eq("status", "ready")
+        .maybeSingle(),
+    ]);
+
+  if (issuesError || coverError) {
+    console.error(
+      "Failed to validate publication images:",
+      issuesError?.message ?? coverError?.message
+    );
+    return { ok: false, error: "not_found" };
+  }
+  if ((unresolvedImageCount ?? 0) > 0) {
+    return { ok: false, error: "unresolved_images" };
+  }
+  if (!cover) {
+    return { ok: false, error: "missing_cover" };
+  }
+
   const site_slug = await allocateDocumentSlug(
     supabase,
     document.title,
@@ -524,13 +562,6 @@ export async function publishDocument(
     }
 
     console.error("Failed to publish document:", error.message);
-    return { ok: false, error: "not_found" };
-  }
-
-  try {
-    await syncDocumentImageIssues(supabase, user.id, id, content_md);
-  } catch (imageError) {
-    console.error("Failed to synchronize published image issues:", imageError);
     return { ok: false, error: "not_found" };
   }
 

@@ -8,6 +8,8 @@ export type ActionResult =
         | "duplicate_type"
         | "empty"
         | "empty_content"
+        | "missing_cover"
+        | "unresolved_images"
         | "last_document"
         | "invalid_type"
         | "invalid_slug"
@@ -26,6 +28,8 @@ export const ACTION_ERROR_MESSAGES: Record<
   duplicate_type: "Такой тип документа уже существует",
   empty: "Название не может быть пустым",
   empty_content: "Добавьте текст перед публикацией",
+  missing_cover: "Добавьте обложку перед публикацией",
+  unresolved_images: "Исправьте проблемные изображения перед публикацией",
   last_document: "Нельзя оставить материал без документов",
   invalid_type: "Выберите тип из существующих шаблонов",
   invalid_slug: "Используйте латинские буквы, цифры и дефисы",

@@ -1,12 +1,22 @@
 "use client";
 
 import {
+  getDocumentImageImportUserId,
+  processStagedDocumentImage,
+} from "@/app/documents/markdown-image-actions";
+import {
   addDocumentIllustrationFromMaterial,
   makeDocumentCoverFromMaterial,
   removeDocumentPublicationImage,
   reorderDocumentIllustrations,
   updateDocumentPublicationImage,
 } from "@/app/documents/publication-image-actions";
+import { MATERIAL_IMAGE_ACCEPT, validateMaterialImage } from "@/lib/materialImageUploadClient";
+import {
+  DOCUMENT_IMAGE_IMPORTS_BUCKET,
+  documentImageImportStoragePath,
+} from "@/lib/storagePaths";
+import { createClient } from "@/lib/supabase/client";
 import type { DocumentPublicationImage, Material } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -84,6 +94,41 @@ export function DocumentPublicationImagesBlock({
     setMessage("Markdown скопирован");
   }
 
+  async function uploadCover(file: File) {
+    try {
+      const extension = validateMaterialImage(file);
+      const auth = await getDocumentImageImportUserId();
+      if (!auth.ok) throw new Error(auth.error);
+      const assetId = crypto.randomUUID();
+      const stagingPath = documentImageImportStoragePath(
+        auth.userId,
+        documentId,
+        assetId,
+        extension
+      );
+      const supabase = createClient();
+      const { error } = await supabase.storage
+        .from(DOCUMENT_IMAGE_IMPORTS_BUCKET)
+        .upload(stagingPath, file, {
+          contentType: file.type,
+          cacheControl: "3600",
+          upsert: false,
+        });
+      if (error) throw error;
+      const result = await processStagedDocumentImage({
+        documentId,
+        assetId,
+        imageNumber: 1,
+        alt: file.name.replace(/\.[^.]+$/, ""),
+        title: null,
+        stagingPath,
+      });
+      refreshAfter(result);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Не удалось загрузить обложку");
+    }
+  }
+
   return (
     <section className="doc-section publication-images-section">
       <div className="section-header">
@@ -127,10 +172,23 @@ export function DocumentPublicationImagesBlock({
             </button>
           </article>
         ) : (
-          <p className="empty-text">Обложка не выбрана.</p>
+          <p className="empty-text">Обложка обязательна для публикации.</p>
         )}
 
         <div className="publication-image-add-row">
+          <label className="ghost-button">
+            Загрузить обложку
+            <input
+              className="visually-hidden"
+              type="file"
+              accept={MATERIAL_IMAGE_ACCEPT}
+              disabled={isPending}
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) startTransition(() => uploadCover(file));
+              }}
+            />
+          </label>
           <select
             value={coverMaterialId}
             onChange={(event) => setCoverMaterialId(event.target.value)}
