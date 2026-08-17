@@ -41,6 +41,15 @@ function isExplicitPublicPath(pathname: string): boolean {
   );
 }
 
+function isPublicPath(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    isExplicitPublicPath(pathname)
+  );
+}
+
 function redirectToHost(request: NextRequest, hostname: string) {
   const url = request.nextUrl.clone();
   url.protocol = "https";
@@ -56,6 +65,10 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.hostname
   ).split(":")[0];
   const { pathname } = request.nextUrl;
+
+  if (hostname === "www.soloten.com" && isPublicPath(pathname)) {
+    return redirectToHost(request, "soloten.com");
+  }
 
   if (pathname === "/") {
     const url = request.nextUrl.clone();
