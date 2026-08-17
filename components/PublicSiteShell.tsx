@@ -1,6 +1,7 @@
 "use client";
 
 import { FlipText, WaveText } from "@/components/MotionText";
+import { PublicAnalytics } from "@/components/PublicAnalytics";
 import { SiteClock } from "@/components/SiteClock";
 import { PUBLIC_DESKTOP_NAV, PUBLIC_NAV } from "@/lib/publicContent";
 import { FOOTER_NAV, PUBLIC_SOCIALS } from "@/lib/publicHome";
@@ -50,11 +51,13 @@ export function PublicSiteShell({
   }, [fullBleed]);
 
   return (
-    <div
-      className={`public-site${fullBleed ? " public-site--hero" : ""}${
-        menuOpen ? " is-menu-open" : ""
-      }${scrolledPastHero ? " is-scrolled" : ""}`}
-    >
+    <>
+      <PublicAnalytics />
+      <div
+        className={`public-site${fullBleed ? " public-site--hero" : ""}${
+          menuOpen ? " is-menu-open" : ""
+        }${scrolledPastHero ? " is-scrolled" : ""}`}
+      >
       <header className="public-header">
         <Link
           href="/ru"
@@ -185,7 +188,8 @@ export function PublicSiteShell({
         <p className="public-footer-copy">
           © {new Date().getFullYear()} Дмитрий Слиньков · SLINKOV MEDIA
         </p>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </>
   );
 }
