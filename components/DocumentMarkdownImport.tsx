@@ -197,7 +197,7 @@ export function DocumentMarkdownImport({ documentId, disabled, onImported }: Pro
       const contentMd = replaceMarkdownImages(markdown, replacements);
       const result = await completeDocumentMarkdownImport({ documentId, contentMd, issues });
       if (!result.ok) throw new Error(result.error);
-      onImported(contentMd);
+      onImported(result.contentMd ?? contentMd);
       setMessage(
         issues.length === 0
           ? `Импорт завершён: ${uploadedCount} изображений загружено.${coverMessage}${ignoredMessage}`

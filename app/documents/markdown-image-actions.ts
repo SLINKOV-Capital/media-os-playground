@@ -8,6 +8,11 @@ import {
 } from "@/lib/documentMarkdownImages";
 import { replaceDocumentImageIssues, syncDocumentImageIssues } from "@/lib/documentImageIssuesServer";
 import {
+  parseDocumentMarkdownTerms,
+  planDocumentTermSync,
+  type ImportedDocumentTerm,
+} from "@/lib/documentMarkdownTerms";
+import {
   DOCUMENT_IMAGE_IMPORTS_BUCKET,
   DOCUMENT_IMAGES_BUCKET,
 } from "@/lib/storagePaths";
@@ -31,6 +36,51 @@ async function getContext(documentId: string) {
     .eq("user_id", user.id)
     .maybeSingle();
   return document ? { supabase, user, document } : null;
+}
+
+async function syncImportedDocumentTerms(
+  context: NonNullable<Awaited<ReturnType<typeof getContext>>>,
+  terms: ImportedDocumentTerm[]
+) {
+  const { data: existingTerms, error: selectError } = await context.supabase
+    .from("document_terms")
+    .select("id, term")
+    .eq("document_id", context.document.id)
+    .eq("user_id", context.user.id);
+  if (selectError) throw selectError;
+
+  const plan = planDocumentTermSync(existingTerms ?? [], terms);
+
+  if (plan.staleIds.length > 0) {
+    const { error } = await context.supabase
+      .from("document_terms")
+      .delete()
+      .in("id", plan.staleIds)
+      .eq("document_id", context.document.id)
+      .eq("user_id", context.user.id);
+    if (error) throw error;
+  }
+
+  for (const item of plan.entries) {
+    const values = {
+      term: item.term,
+      definition: item.definition,
+      sort_order: item.sort_order,
+    };
+    const { error } = item.id
+      ? await context.supabase
+          .from("document_terms")
+          .update(values)
+          .eq("id", item.id)
+          .eq("document_id", context.document.id)
+          .eq("user_id", context.user.id)
+      : await context.supabase.from("document_terms").insert({
+          ...values,
+          document_id: context.document.id,
+          user_id: context.user.id,
+        });
+    if (error) throw error;
+  }
 }
 
 function refresh(documentId: string, siteSlug: string | null) {
@@ -180,19 +230,29 @@ export async function completeDocumentMarkdownImport(input: {
 }): Promise<Result> {
   const context = await getContext(input.documentId);
   if (!context) return { ok: false, error: "Документ не найден" };
-  const parsed = parseMarkdownImages(input.contentMd);
+  let imported;
+  try {
+    imported = parseDocumentMarkdownTerms(input.contentMd);
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Не удалось разобрать секцию терминов",
+    };
+  }
+  const parsed = parseMarkdownImages(imported.contentMd);
   const validNumbers = new Set(parsed.map((image) => image.imageNumber));
   const issues = input.issues.filter((issue) => validNumbers.has(issue.imageNumber));
   try {
+    await syncImportedDocumentTerms(context, imported.terms);
     const { error } = await context.supabase
       .from("documents")
-      .update({ content_md: input.contentMd })
+      .update({ content_md: imported.contentMd })
       .eq("id", input.documentId)
       .eq("user_id", context.user.id);
     if (error) throw error;
     await replaceDocumentImageIssues(context.supabase, context.user.id, input.documentId, issues);
 
-    const referencedUrls = new Set(parseMarkdownImages(input.contentMd).map((image) => image.src));
+    const referencedUrls = new Set(parseMarkdownImages(imported.contentMd).map((image) => image.src));
     const { data: staleAssets } = await context.supabase
       .from("document_publication_images")
       .select("id, role, storage_path, image_url")
@@ -213,7 +273,7 @@ export async function completeDocumentMarkdownImport(input: {
         .remove(stale.map((asset) => asset.storage_path));
     }
     refresh(input.documentId, context.document.site_slug);
-    return { ok: true, contentMd: input.contentMd };
+    return { ok: true, contentMd: imported.contentMd };
   } catch (error) {
     console.error("Failed to finish Markdown import:", error);
     return { ok: false, error: "Не удалось сохранить импортированный Markdown" };
