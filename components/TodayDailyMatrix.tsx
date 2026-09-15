@@ -76,6 +76,12 @@ export function TodayDailyMatrix({ newsItems, writingStatuses, nihuyasiEntries, 
     setPopover({ kind, date, ...position(button) });
   }
 
+  function openNewsHover(date: string, button: HTMLButtonElement) {
+    setPopover((current) => current && current.kind !== "news"
+      ? current
+      : { kind: "news", date, ...position(button) });
+  }
+
   function chooseWriting(date: string, minutes: WritingMinutes) {
     const previous = writing[date] ?? 0;
     setWriting((current) => ({ ...current, [date]: minutes }));
@@ -127,7 +133,7 @@ export function TodayDailyMatrix({ newsItems, writingStatuses, nihuyasiEntries, 
             <button type="button" className={`${styles.cell} ${state ? styles[state] : ""}`}
               aria-label={`${displayDate(key)}: ${state ? NEWS_QUEUE_STATE_LABELS[state] : "новостей нет"}`}
               onClick={(event) => open("news", key, event.currentTarget)}
-              onMouseEnter={(event) => open("news", key, event.currentTarget)}
+              onMouseEnter={(event) => openNewsHover(key, event.currentTarget)}
               onFocus={(event) => open("news", key, event.currentTarget)} onBlur={() => setPopover(null)}>
               {items.length > 1 ? <span className={styles.count}>{items.length}</span> : null}
             </button>
@@ -150,7 +156,8 @@ export function TodayDailyMatrix({ newsItems, writingStatuses, nihuyasiEntries, 
       {popover ? createPortal(
         <div role="dialog" aria-label={displayDate(popover.date)}
           className={`${styles.popover} ${popover.above ? styles.popoverAbove : ""}`}
-          style={{ left: popover.left, top: popover.top }} onMouseLeave={() => setPopover(null)}>
+          style={{ left: popover.left, top: popover.top }}
+          onMouseLeave={() => setPopover((value) => value?.kind === "news" ? null : value)}>
           <div className={styles.popoverDate}>{displayDate(popover.date)}</div>
           {popover.kind === "news" && (newsRows.length ? <ul className={styles.popoverList}>
             {newsRows.map((item) => {
