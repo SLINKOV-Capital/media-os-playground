@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 const URL_REGEX = /(https?:\/\/[^\s]+)/g;
 
@@ -38,7 +38,11 @@ export function LinkifiedText({
     const index = match.index ?? 0;
 
     if (index > lastIndex) {
-      parts.push(text.slice(lastIndex, index));
+      parts.push(
+        <Fragment key={`text-${lastIndex}`}>
+          {text.slice(lastIndex, index)}
+        </Fragment>
+      );
     }
 
     const { href, suffix } = splitUrlSuffix(url);
@@ -60,14 +64,16 @@ export function LinkifiedText({
     );
 
     if (suffix) {
-      parts.push(suffix);
+      parts.push(<Fragment key={`suffix-${index}`}>{suffix}</Fragment>);
     }
 
     lastIndex = index + url.length;
   }
 
   if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
+    parts.push(
+      <Fragment key={`text-${lastIndex}`}>{text.slice(lastIndex)}</Fragment>
+    );
   }
 
   return <span className={className}>{parts}</span>;

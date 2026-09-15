@@ -163,6 +163,12 @@ export type NihuyasiEntry = {
   updated_at: string;
 };
 
+export type DailyWritingStatus = {
+  user_id: string;
+  date: string;
+  minutes: 0 | 35 | 70 | 90;
+};
+
 export type WorkflowTemplate = {
   id: string;
   user_id: string;
