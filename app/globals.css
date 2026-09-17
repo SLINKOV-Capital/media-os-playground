@@ -4602,6 +4602,7 @@ h1.page-title-static {
 .public-site .markdown-content a {
   color: var(--public-accent);
   font-size: inherit;
+  overflow-wrap: anywhere;
 }
 
 @media (min-width: 768px) {
