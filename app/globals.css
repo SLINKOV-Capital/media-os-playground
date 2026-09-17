@@ -4032,6 +4032,7 @@ h1.page-title-static {
 }
 
 .markdown-mermaid {
+  position: relative;
   display: grid;
   width: 100%;
   max-width: 100%;
@@ -4045,11 +4046,114 @@ h1.page-title-static {
   -webkit-overflow-scrolling: touch;
 }
 
-.markdown-mermaid svg {
+.markdown-mermaid-preview {
+  display: grid;
+  width: 100%;
+  cursor: zoom-in;
+  place-items: center;
+}
+
+.markdown-mermaid svg,
+.mermaid-viewer svg {
   display: block;
   width: auto;
   max-width: 100%;
   height: auto;
+}
+
+.markdown-mermaid-expand {
+  position: absolute;
+  z-index: 1;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--public-line);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 92%);
+  color: var(--public-ink);
+  cursor: zoom-in;
+  font: 600 18px/1 var(--font-ui);
+  place-items: center;
+}
+
+.markdown-mermaid-expand:hover,
+.markdown-mermaid-expand:focus-visible {
+  border-color: var(--public-ink);
+}
+
+.mermaid-viewer {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  background: rgb(255 255 255 / 97%);
+}
+
+.mermaid-viewer-controls {
+  position: absolute;
+  z-index: 2;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--public-line);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgb(0 0 0 / 10%);
+}
+
+.mermaid-viewer-controls button {
+  min-width: 42px;
+  height: 42px;
+  padding: 0 12px;
+  border: 0;
+  border-right: 1px solid var(--public-line);
+  background: transparent;
+  color: var(--public-ink);
+  cursor: pointer;
+  font: 600 15px/1 var(--font-ui);
+}
+
+.mermaid-viewer-controls button:last-child {
+  border-right: 0;
+  font-size: 22px;
+}
+
+.mermaid-viewer-controls button:hover,
+.mermaid-viewer-controls button:focus-visible {
+  background: var(--public-surface-muted);
+}
+
+.mermaid-viewer-canvas {
+  display: grid;
+  overflow: hidden;
+  padding: clamp(60px, 8vw, 100px) clamp(16px, 5vw, 72px) clamp(24px, 5vw, 72px);
+  cursor: grab;
+  place-items: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.mermaid-viewer-canvas:active {
+  cursor: grabbing;
+}
+
+.mermaid-viewer-diagram {
+  display: grid;
+  width: min(1200px, 100%);
+  max-height: 100%;
+  transform-origin: center;
+  transition: transform 120ms ease-out;
+  place-items: center;
+  will-change: transform;
+}
+
+.mermaid-viewer-diagram svg {
+  max-width: 100%;
+  max-height: calc(100vh - 140px);
 }
 
 .markdown-mermaid.is-loading,
