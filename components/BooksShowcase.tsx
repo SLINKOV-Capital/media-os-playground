@@ -168,10 +168,12 @@ export function BooksShowcase({ fragments, isAuthor }: { fragments: BookPreviewF
                 </>
               )}
             </div>
-            <div className="book-preview-actions">
-              <div className="book-preview-controls"><button type="button" aria-label={isMobile ? "Предыдущая страница" : "Предыдущий разворот"} onClick={() => move(-1)} disabled={index <= 0}>←</button><span>{totalStops === 0 ? "" : isOrderPage ? "Конец" : `${index + 1} / ${totalStops}`}</span><button type="button" aria-label={isMobile ? "Следующая страница" : "Следующий разворот"} onClick={() => move(1)} disabled={totalStops === 0 || index >= totalStops}>→</button></div>
-              {totalStops > 0 && !hasTurned ? <p className="book-preview-hint"><span className="book-preview-hint-desktop">Листайте рассказы →</span><span className="book-preview-hint-mobile">Листайте свайпом →</span></p> : null}
-            </div>
+            {totalStops > 0 ? (
+              <div className="book-preview-actions">
+                <div className="book-preview-controls"><button type="button" aria-label={isMobile ? "Предыдущая страница" : "Предыдущий разворот"} onClick={() => move(-1)} disabled={index <= 0}>←</button><span>{isOrderPage ? "Конец" : `${index + 1} / ${totalStops}`}</span><button type="button" aria-label={isMobile ? "Следующая страница" : "Следующий разворот"} onClick={() => move(1)} disabled={index >= totalStops}>→</button></div>
+                {!hasTurned ? <p className="book-preview-hint"><span className="book-preview-hint-desktop">Листайте рассказы →</span><span className="book-preview-hint-mobile">Листайте свайпом →</span></p> : null}
+              </div>
+            ) : null}
           </section>
         ) : null}
       </article>
