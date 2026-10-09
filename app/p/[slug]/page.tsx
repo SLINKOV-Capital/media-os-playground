@@ -7,8 +7,6 @@ import {
 } from "@/lib/site";
 import { notFound, permanentRedirect } from "next/navigation";
 
-export const preferredRegion = "arn1";
-
 type LegacyPublicDocumentPageProps = {
   params: Promise<{ slug: string }>;
 };
