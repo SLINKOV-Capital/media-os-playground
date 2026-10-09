@@ -4,6 +4,7 @@ import type { DemoTerm } from "@/lib/demoArticle";
 import { stripUnresolvedMarkdownImages } from "@/lib/documentMarkdownImages";
 import { extractMarkdownToc, slugifyHeading } from "@/lib/demoArticle";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { PublicAudioPlayer } from "@/components/PublicAudioPlayer";
 import Link from "next/link";
 import {
   Children,
@@ -32,7 +33,45 @@ type ArticleExperienceProps = {
   videoYoutubeId?: string | null;
   hasAudio?: boolean;
   hasPresentation?: boolean;
+  trailerUrl?: string | null;
+  trailerPosterUrl?: string | null;
+  authorAudioUrl?: string | null;
+  originalMusicUrl?: string | null;
+  yandexMusicUrl?: string | null;
+  spotifyUrl?: string | null;
+  bookRelationship?: "standalone" | "included" | "excerpt";
 };
+
+function youtubeEmbedUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    if (hostname !== "youtu.be" && hostname !== "youtube.com" && !hostname.endsWith(".youtube.com")) return null;
+    let id = parsed.hostname.includes("youtu.be") ? parsed.pathname.slice(1) : parsed.searchParams.get("v");
+    if (!id && parsed.pathname.includes("/shorts/")) id = parsed.pathname.split("/shorts/")[1]?.split("/")[0] ?? null;
+    if (!id && parsed.pathname.includes("/embed/")) id = parsed.pathname.split("/embed/")[1]?.split("/")[0] ?? null;
+    if (!id || !/^[\w-]{11}$/.test(id)) return null;
+    return { id, embed: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`, vertical: parsed.pathname.includes("/shorts/") };
+  } catch { return null; }
+}
+
+function platformEmbed(url: string, platform: "spotify" | "yandex") {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    if (platform === "spotify" && (hostname === "spotify.com" || hostname.endsWith(".spotify.com"))) {
+      const path = parsed.pathname.match(/^\/(track|album|playlist|episode)\/([A-Za-z0-9]+)\/?$/);
+      return path ? `https://open.spotify.com/embed/${path[1]}/${path[2]}` : null;
+    }
+    if (platform === "yandex" && (hostname === "yandex.ru" || hostname.endsWith(".yandex.ru"))) {
+      const track = parsed.pathname.match(/\/album\/(\d+)\/track\/(\d+)/);
+      if (track) return `https://music.yandex.ru/iframe/#track/${track[2]}/${track[1]}`;
+      const playlist = parsed.pathname.match(/\/users\/([^/]+)\/playlists\/(\d+)/);
+      if (playlist) return `https://music.yandex.ru/iframe/#playlist/${playlist[1]}/${playlist[2]}`;
+    }
+  } catch { return null; }
+  return null;
+}
 
 function IconVideo() {
   return (
@@ -146,6 +185,13 @@ export function ArticleExperience({
   videoYoutubeId,
   hasAudio = true,
   hasPresentation = true,
+  trailerUrl = null,
+  trailerPosterUrl = null,
+  authorAudioUrl = null,
+  originalMusicUrl = null,
+  yandexMusicUrl = null,
+  spotifyUrl = null,
+  bookRelationship = "standalone",
 }: ArticleExperienceProps) {
   const [lang, setLang] = useState<ArticleLang>("ru");
   const [activeTermId, setActiveTermId] = useState<string | null>(
@@ -153,6 +199,7 @@ export function ArticleExperience({
   );
   const [activeHeadingId, setActiveHeadingId] = useState<string | null>(null);
   const [videoOpen, setVideoOpen] = useState(false);
+  const trailer = trailerUrl ? youtubeEmbedUrl(trailerUrl) : null;
   const [mobileTermOpen, setMobileTermOpen] = useState(false);
   const [tocPin, setTocPin] = useState<CSSProperties>({});
   const [termsPin, setTermsPin] = useState<CSSProperties>({});
@@ -455,6 +502,17 @@ export function ArticleExperience({
           <h1 className="public-article-title">{title}</h1>
           {preview ? <p className="public-article-preview">{preview}</p> : null}
 
+          {trailer ? (
+            <section className={`public-trailer${trailer.vertical ? " is-vertical" : ""}`}>
+              {videoOpen ? <iframe title={`Трейлер: ${title}`} src={trailer.embed} allow="accelerometer; autoplay; encrypted-media; picture-in-picture; web-share" allowFullScreen /> : (
+                <button type="button" className="public-trailer-poster" onClick={() => setVideoOpen(true)} aria-label="Воспроизвести трейлер">
+                  {trailerPosterUrl ? <img src={trailerPosterUrl} alt="Постер трейлера" /> : <span className="public-trailer-poster-empty" />}
+                  <span className="public-trailer-play">▶</span>
+                </button>
+              )}
+            </section>
+          ) : null}
+
           {showToolbar ? (
             <div
               className="public-article-toolbar"
@@ -562,6 +620,20 @@ export function ArticleExperience({
             components={markdownComponents}
             typographyLocale={lang === "ru" ? "ru" : undefined}
           />
+          {authorAudioUrl ? <PublicAudioPlayer src={authorAudioUrl} title={title} /> : null}
+          {originalMusicUrl || yandexMusicUrl || spotifyUrl ? (
+            <section className="public-music-section">
+              <h2>Музыка к произведению</h2>
+              {originalMusicUrl ? <div className="public-music-card"><p>Авторская композиция</p><audio controls preload="none" src={originalMusicUrl}>Ваш браузер не поддерживает аудио.</audio></div> : null}
+              {yandexMusicUrl ? <MusicPlatformCard label="Яндекс Музыка" url={yandexMusicUrl} embed={platformEmbed(yandexMusicUrl, "yandex")} /> : null}
+              {spotifyUrl ? <MusicPlatformCard label="Spotify" url={spotifyUrl} embed={platformEmbed(spotifyUrl, "spotify")} /> : null}
+            </section>
+          ) : null}
+          {bookRelationship === "included" ? (
+            <aside className="public-book-cta"><p>Рассказ входит в книгу «Поговорим без слайдов».</p><a href="https://t.me/slinkov" target="_blank" rel="noreferrer">Заказать авторское издание</a></aside>
+          ) : bookRelationship === "excerpt" ? (
+            <aside className="public-book-cta"><p>Фрагмент рассказа опубликован в книге «Поговорим без слайдов».</p><a href="https://t.me/slinkov" target="_blank" rel="noreferrer">Заказать авторское издание</a></aside>
+          ) : null}
         </article>
 
         <div ref={termsRailRef} className="public-article-rail public-article-rail--terms">
@@ -601,4 +673,8 @@ export function ArticleExperience({
       </button>
     </div>
   );
+}
+
+function MusicPlatformCard({ label, url, embed }: { label: string; url: string; embed: string | null }) {
+  return <div className="public-music-card"><p>{label}</p>{embed ? <iframe className="public-music-embed" src={embed} title={`${label}: музыка к произведению`} loading="lazy" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" /> : <a href={url} target="_blank" rel="noreferrer">Слушать в {label}</a>}</div>;
 }

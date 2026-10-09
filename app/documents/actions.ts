@@ -421,6 +421,74 @@ export async function updateDocumentPreview(
   return { ok: true };
 }
 
+const DOCUMENT_MEDIA_URL_FIELDS = [
+  "trailer_youtube_url",
+  "trailer_poster_url",
+  "author_audio_url",
+  "original_music_url",
+  "yandex_music_url",
+  "spotify_url",
+] as const;
+
+export async function updateDocumentMedia(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect(COCKPIT_LOGIN_PATH);
+
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return { ok: false, error: "not_found" };
+
+  const values: Record<string, string | number | null> = {};
+  for (const field of DOCUMENT_MEDIA_URL_FIELDS) {
+    const raw = String(formData.get(field) ?? "").trim();
+    if (raw) {
+      try {
+        const url = new URL(raw);
+        if (url.protocol !== "https:" && url.protocol !== "http:") {
+          return { ok: false, error: "invalid_url" };
+        }
+      } catch {
+        return { ok: false, error: "invalid_url" };
+      }
+    }
+    values[field] = raw || null;
+  }
+
+  const relationship = String(formData.get("book_relationship") ?? "standalone");
+  if (!["standalone", "included", "excerpt"].includes(relationship)) {
+    return { ok: false, error: "invalid_relationship" };
+  }
+  values.book_relationship = relationship;
+
+  const excerpt = String(formData.get("book_preview_text") ?? "").trim();
+  const cardText = String(formData.get("book_card_text") ?? "").trim();
+  const rawOrder = String(formData.get("book_preview_order") ?? "").trim();
+  const order = rawOrder ? Number(rawOrder) : null;
+  if (order !== null && (!Number.isInteger(order) || order < 0)) {
+    return { ok: false, error: "invalid_order" };
+  }
+  if (excerpt.length > 3000) return { ok: false, error: "excerpt_too_long" };
+  if (cardText.length > 400) return { ok: false, error: "card_text_too_long" };
+  values.book_preview_text = excerpt || null;
+  values.book_preview_order = order;
+  values.book_card_text = cardText || null;
+
+  const { error } = await supabase
+    .from("documents")
+    .update(values)
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Failed to update document media:", error.message);
+    return { ok: false, error: "not_found" };
+  }
+
+  await revalidateDocumentSite(supabase, id);
+  revalidatePath("/ru/books");
+  return { ok: true };
+}
+
 export async function updateDocumentSiteSlug(
   formData: FormData
 ): Promise<ActionResult> {

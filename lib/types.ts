@@ -37,6 +37,16 @@ export type Document = {
   site_slug: string | null;
   site_published_at: string | null;
   site_featured: boolean;
+  trailer_youtube_url: string | null;
+  trailer_poster_url: string | null;
+  author_audio_url: string | null;
+  original_music_url: string | null;
+  yandex_music_url: string | null;
+  spotify_url: string | null;
+  book_relationship: "standalone" | "included" | "excerpt";
+  book_preview_text: string | null;
+  book_preview_order: number | null;
+  book_card_text: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -54,6 +64,16 @@ export type PublicDocument = Pick<
   | "site_published_at"
   | "site_featured"
 > & {
+  trailer_youtube_url?: string | null;
+  trailer_poster_url?: string | null;
+  author_audio_url?: string | null;
+  original_music_url?: string | null;
+  yandex_music_url?: string | null;
+  spotify_url?: string | null;
+  book_relationship?: "standalone" | "included" | "excerpt";
+  book_preview_text?: string | null;
+  book_preview_order?: number | null;
+  book_card_text?: string | null;
   publication_cover?: Pick<DocumentPublicationImage, "image_url" | "alt"> | null;
 };
 

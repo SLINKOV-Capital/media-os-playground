@@ -1,17 +1,19 @@
-import { generateActions, updateDocumentTitle } from "@/app/documents/actions";
+import { updateDocumentTitle } from "@/app/documents/actions";
 import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
 import { DeleteDocumentButton } from "@/components/DeleteDocumentButton";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
 import { DocumentImageIssuesBlock } from "@/components/DocumentImageIssuesBlock";
 import { DocumentPublicationImagesBlock } from "@/components/DocumentPublicationImagesBlock";
 import { DocumentRecommendationsBlock } from "@/components/DocumentRecommendationsBlock";
-import { DocumentSiteBlock } from "@/components/DocumentSiteBlock";
+import { DocumentSiteProvider, DocumentSitePublicationBlock, DocumentSiteTextBlock } from "@/components/DocumentSiteBlock";
+import { DocumentMediaBlock } from "@/components/DocumentMediaBlock";
 import { DocumentTermsBlock } from "@/components/DocumentTermsBlock";
 import { DocumentTypeSelect } from "@/components/DocumentTypeSelect";
+import { DocumentEditorTabs } from "@/components/DocumentEditorTabs";
 import { PageTitle } from "@/components/PageTitle";
+import { listTemplateDocumentTypes } from "@/lib/document-types";
 import { AppShell } from "@/components/AppShell";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
-import { listTemplateDocumentTypes } from "@/lib/document-types";
 import { isDocumentSiteLocked } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
 import { mapActionsMaterials } from "@/lib/mapActionMaterials";
@@ -19,7 +21,7 @@ import {
   collectMaterialIdsFromLinkRows,
   mapDocumentMaterialsFromRows,
 } from "@/lib/mapDocumentMaterials";
-import type { Document, DocumentImageIssue, DocumentPublicationImage, DocumentRecommendation, DocumentTerm, Material, WorkflowTemplateV2 } from "@/lib/types";
+import type { Document, DocumentImageIssue, DocumentPublicationImage, DocumentRecommendation, DocumentTerm, Material } from "@/lib/types";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -155,21 +157,6 @@ export default async function DocumentPage({
     }
   }
 
-  const templateTypes = listTemplateDocumentTypes(templatesData ?? []);
-
-  let template: WorkflowTemplateV2 | null = null;
-
-  if (actions.length === 0) {
-    const { data: templateData } = await supabase
-      .from("workflow_templates_v2")
-      .select("*")
-      .eq("document_type", document.document_type)
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    template = (templateData as WorkflowTemplateV2 | null) ?? null;
-  }
-
   async function saveDocumentTitle(title: string) {
     "use server";
 
@@ -187,67 +174,59 @@ export default async function DocumentPage({
         </Link>
 
         <div className="doc-page-stack">
-          <header className="page-header">
-            <PageTitle value={document.title} onSave={saveDocumentTitle} />
-            <DocumentTypeSelect
-              documentId={document.id}
-              value={document.document_type}
-              templateTypes={templateTypes}
-              disabled={isDocumentSiteLocked(document)}
+          <DocumentSiteProvider document={document}>
+            <DocumentEditorTabs
+              text={
+                <>
+                  <header className="page-header">
+                    <PageTitle value={document.title} onSave={saveDocumentTitle} />
+                  </header>
+                  <DocumentSiteTextBlock />
+                  {document.document_type.toLowerCase().includes("стат") ? (
+                    <DocumentTermsBlock
+                      documentId={document.id}
+                      terms={(termsData ?? []) as DocumentTerm[]}
+                      candidates={candidateDocumentsData ?? []}
+                      contentMd={document.content_md ?? ""}
+                    />
+                  ) : null}
+                </>
+              }
+              publication={
+                <>
+                  <DocumentSitePublicationBlock />
+                  <header className="page-header">
+                    <DocumentTypeSelect
+                      documentId={document.id}
+                      value={document.document_type}
+                      templateTypes={listTemplateDocumentTypes(templatesData ?? [])}
+                      disabled={isDocumentSiteLocked(document)}
+                    />
+                  </header>
+                  <DocumentPublicationImagesBlock
+                    documentId={document.id}
+                    assets={(publicationImagesData ?? []) as DocumentPublicationImage[]}
+                    materials={materials}
+                  />
+                  {(imageIssuesData?.length ?? 0) > 0 ? (
+                    <DocumentImageIssuesBlock
+                      documentId={document.id}
+                      issues={(imageIssuesData ?? []) as DocumentImageIssue[]}
+                      materials={materials}
+                    />
+                  ) : null}
+                  <DocumentRecommendationsBlock
+                    documentId={document.id}
+                    recommendations={(recommendationsData ?? []) as DocumentRecommendation[]}
+                    candidates={(candidateDocumentsData ?? []).filter(
+                      (candidate) => candidate.site_status === "published"
+                    )}
+                  />
+                </>
+              }
+              media={<DocumentMediaBlock document={document} />}
             />
-          </header>
-
-          <DocumentSiteBlock document={document} />
-
-          <DocumentPublicationImagesBlock
-            documentId={document.id}
-            assets={(publicationImagesData ?? []) as DocumentPublicationImage[]}
-            materials={materials}
-          />
-
-          {(imageIssuesData?.length ?? 0) > 0 ? (
-            <DocumentImageIssuesBlock
-              documentId={document.id}
-              issues={(imageIssuesData ?? []) as DocumentImageIssue[]}
-              materials={materials}
-            />
-          ) : null}
-
-          <DocumentRecommendationsBlock
-            documentId={document.id}
-            recommendations={(recommendationsData ?? []) as DocumentRecommendation[]}
-            candidates={(candidateDocumentsData ?? []).filter(
-              (candidate) => candidate.site_status === "published"
-            )}
-          />
-
-          {document.document_type.toLowerCase().includes("стат") ? (
-            <DocumentTermsBlock
-              documentId={document.id}
-              terms={(termsData ?? []) as DocumentTerm[]}
-              candidates={candidateDocumentsData ?? []}
-              contentMd={document.content_md ?? ""}
-            />
-          ) : null}
-
-          {actions.length === 0 && template && (
-            <div className="workflow-callout">
-              <p className="workflow-callout-title">
-                Найден шаблон для этого типа документа
-              </p>
-              <ul className="workflow-callout-list">
-                {template.action_titles.map((title) => (
-                  <li key={title}>{title}</li>
-                ))}
-              </ul>
-              <form action={generateActions}>
-                <input type="hidden" name="document_id" value={document.id} />
-                <button type="submit" className="ghost-button">
-                  Сгенерировать действия
-                </button>
-              </form>
-            </div>
-          )}
+          </DocumentSiteProvider>
 
           <DocumentActionsBlock
             documentId={document.id}

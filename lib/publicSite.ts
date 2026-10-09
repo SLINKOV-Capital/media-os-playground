@@ -16,6 +16,14 @@ import { mapDocumentMaterialsFromRows } from "@/lib/mapDocumentMaterials";
 import type { DemoTerm } from "@/lib/demoArticle";
 import type { RecommendedArticleCard } from "@/components/RecommendedArticles";
 
+function mediaColumnsMissing(error: { code?: string; message?: string } | null) {
+  return Boolean(error && (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    /column .* does not exist|could not find .* column/i.test(error.message ?? "")
+  ));
+}
+
 async function attachPublicationCovers(
   documents: PublicDocument[]
 ): Promise<PublicDocument[]> {
@@ -98,14 +106,28 @@ export async function fetchPublishedDocumentsBySection(
 ): Promise<PublicDocument[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const mediaResponse = await supabase
     .from("documents")
     .select(
-      "id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured"
+      "id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured, book_relationship, book_preview_text, book_preview_order, book_card_text"
     )
     .eq("site_status", "published")
     .eq("site_locale", locale)
     .order("site_published_at", { ascending: false });
+
+  let data = mediaResponse.data as PublicDocument[] | null;
+  let error = mediaResponse.error;
+
+  if (mediaColumnsMissing(error)) {
+    const fallback = await supabase
+      .from("documents")
+      .select("id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured")
+      .eq("site_status", "published")
+      .eq("site_locale", locale)
+      .order("site_published_at", { ascending: false });
+    data = fallback.data as PublicDocument[] | null;
+    error = fallback.error;
+  }
 
   if (error) {
     console.error(`Failed to fetch published ${section}:`, error.message);
@@ -125,15 +147,30 @@ export async function fetchPublishedDocumentBySlug(
 ): Promise<PublicDocument | null> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const mediaResponse = await supabase
     .from("documents")
     .select(
-      "id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured"
+      "id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured, trailer_youtube_url, trailer_poster_url, author_audio_url, original_music_url, yandex_music_url, spotify_url, book_relationship, book_preview_text, book_preview_order, book_card_text"
     )
     .eq("site_status", "published")
     .eq("site_locale", locale)
     .eq("site_slug", slug)
     .maybeSingle();
+
+  let data = mediaResponse.data as PublicDocument | null;
+  let error = mediaResponse.error;
+
+  if (mediaColumnsMissing(error)) {
+    const fallback = await supabase
+      .from("documents")
+      .select("id, title, document_type, preview, content_md, site_locale, site_slug, site_published_at, site_featured")
+      .eq("site_status", "published")
+      .eq("site_locale", locale)
+      .eq("site_slug", slug)
+      .maybeSingle();
+    data = fallback.data as PublicDocument | null;
+    error = fallback.error;
+  }
 
   if (error) {
     console.error("Failed to fetch published document:", error.message);

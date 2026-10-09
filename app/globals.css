@@ -2208,6 +2208,13 @@ h1.page-title-static {
   margin-bottom: 0;
 }
 
+.document-editor-tabs { display: flex; flex-direction: column; gap: 16px; }
+.document-editor-tab-list { display: flex; gap: 8px; border-bottom: 1px solid var(--border); }
+.document-editor-tab { padding: 10px 14px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-muted); font: inherit; cursor: pointer; }
+.document-editor-tab[aria-selected="true"] { border-bottom-color: var(--accent); color: var(--text); }
+.document-editor-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.document-editor-panel[hidden] { display: none; }
+
 .doc-site-section {
   margin-top: 8px;
 }
@@ -2284,6 +2291,22 @@ h1.page-title-static {
   margin: 0;
   font-size: 12px;
   color: #c0392b;
+}
+
+.doc-media-section { margin-top: 8px; border: 1px solid var(--border); border-radius: 6px; }
+.doc-media-summary { display: flex; padding: 12px 14px; cursor: pointer; list-style: none; }
+.doc-media-summary::-webkit-details-marker { display: none; }
+.doc-media-form { padding: 8px 14px 16px; }
+.doc-media-field { display: block; margin-bottom: 12px; font-size: 12px; color: var(--text-muted); }
+.doc-media-field > span { display: block; margin-bottom: 5px; }
+.doc-media-field .doc-site-preview-input { margin-bottom: 0; }
+.doc-media-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; }
+
+@media (max-width: 640px) { .doc-media-grid { grid-template-columns: 1fr; gap: 0; } }
+
+@media (max-width: 640px) {
+  .document-editor-tab-list { gap: 0; }
+  .document-editor-tab { flex: 1; padding-inline: 8px; }
 }
 
 /* ── Public site ── */
@@ -3548,7 +3571,6 @@ h1.page-title-static {
 }
 
 .book-showcase-toggle {
-  margin-top: 28px;
   padding: 12px 20px;
   border: 1px solid var(--public-ink);
   border-radius: 999px;
@@ -3602,6 +3624,85 @@ h1.page-title-static {
 .book-showcase-fallback a {
   color: var(--public-ink);
   text-underline-offset: 0.18em;
+}
+
+.book-showcase-cover-button { display: block; width: 100%; padding: 0; border: 0; cursor: pointer; }
+.book-showcase-cover-button:focus-visible { outline: 3px solid var(--public-accent); outline-offset: 4px; }
+.book-order-link { display: inline-flex; align-items: center; justify-content: center; padding: 12px 19px; border-radius: 999px; background: var(--public-accent); color: white; font-weight: 650; text-decoration: none; }
+.book-showcase-actions { display: flex; align-items: center; gap: 16px; margin-top: 28px; }
+.book-showcase-actions .book-order-link { margin: 0; }
+.book-preview-actions { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 18px; }
+.book-preview-actions .book-preview-controls { margin-top: 0; }
+.book-preview-actions .book-order-link { margin: 0; }
+.book-showcase-secondary { margin-top: 12px; color: var(--public-muted); font-size: 13px; }
+.book-preview { position: relative; isolation: isolate; grid-column: 1 / -1; margin-top: 12px; padding: clamp(16px, 4vw, 40px); border-radius: 18px; overflow: hidden; background: #e9e3d8; }
+.book-preview-mockup { position: absolute; z-index: -1; inset: -12%; opacity: .18; filter: blur(18px) saturate(.45) brightness(.62); transform: scale(1.08); }
+.book-preview-mockup img { object-fit: cover; }
+.book-preview-spread { display: grid; grid-template-columns: 1fr 1fr; width: min(100%, 1000px); min-height: 490px; margin: auto; border-radius: 8px; overflow: hidden; box-shadow: 0 18px 48px rgb(28 24 18 / 16%); perspective: 1000px; }
+.book-preview-page { position: relative; min-width: 0; padding: clamp(24px, 5vw, 64px); background: #fffdf7; }
+.book-preview-spread.has-fragment .book-preview-page-text { animation: book-page-enter 260ms ease-out both; }
+@keyframes book-page-enter { from { opacity: .45; transform: rotateY(-3deg) translateX(8px); } to { opacity: 1; transform: rotateY(0) translateX(0); } }
+.book-preview-page + .book-preview-page { border-left: 1px solid #e7e0d5; box-shadow: inset 12px 0 18px -18px #51483b; }
+.book-preview-page-blank { background: #fffdf7; }
+.book-preview-order-page,
+.book-preview-empty-state { grid-column: 1 / -1; display: flex; min-height: 390px; flex-direction: column; align-items: center; justify-content: center; padding: clamp(28px, 7vw, 72px); background: #fffdf7; text-align: center; }
+.book-preview-order-page .book-order-link { margin-top: 12px; }
+.book-preview-order-page p,
+.book-preview-empty-state p { max-width: 600px; }
+.book-preview-page-number { margin: 0 0 28px; color: #9d9588; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+.book-preview-story-title { margin: 0 0 24px; font-family: Georgia, serif; font-size: clamp(20px, 2.4vw, 28px); line-height: 1.2; }
+.book-preview-excerpt { color: #37332d; font-family: Georgia, serif; font-size: clamp(16px, 1.7vw, 20px); line-height: 1.7; white-space: pre-wrap; }
+.book-preview-hint { margin: 0; color: #645d53; font-size: 13px; }
+.book-preview-hint-mobile { display: none; }
+.book-preview-empty { margin-top: 28px; color: var(--public-muted); font-size: 14px; }
+.book-preview-controls { display: flex; align-items: center; justify-content: center; gap: 24px; margin-top: 18px; }
+.book-preview-controls button { width: 42px; height: 42px; border: 1px solid #c8bfb2; border-radius: 50%; background: #fffdf7; font-size: 22px; cursor: pointer; }
+.book-preview-controls button:disabled { opacity: .4; cursor: default; }
+.book-preview-controls span { min-width: 90px; text-align: center; font-size: 13px; color: #645d53; }
+.book-preview-download { display: block; margin: 14px auto 0; padding: 10px 16px; border: 1px solid #5f574d; border-radius: 999px; background: transparent; cursor: pointer; }
+.book-preview-download:disabled { opacity: .5; cursor: default; }
+
+.public-trailer { position: relative; margin: 0 0 28px; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 12px; background: #121212; }
+.public-trailer.is-vertical { width: min(100%, 390px); margin-inline: auto; aspect-ratio: 9 / 16; }
+.public-trailer iframe, .public-trailer-poster { display: block; width: 100%; height: 100%; border: 0; }
+.public-trailer-poster { position: relative; padding: 0; cursor: pointer; background: linear-gradient(140deg, #272622, #090909); }
+.public-trailer-poster img { width: 100%; height: 100%; object-fit: cover; }
+.public-trailer-poster-empty { position: absolute; inset: 0; background: radial-gradient(ellipse at center, #45413b, #111 68%); }
+.public-trailer-play { position: absolute; top: 50%; left: 50%; display: grid; width: 76px; height: 76px; place-items: center; transform: translate(-50%, -50%); border: 1px solid rgb(255 255 255 / 70%); border-radius: 50%; background: rgb(0 0 0 / 45%); color: white; font-size: 25px; padding-left: 4px; }
+.public-media-audio { margin: 28px 0; padding: 18px 20px; border-radius: 12px; background: var(--public-soft); }
+.public-media-kicker { margin: 0 0 12px; font-weight: 650; }
+.public-audio-controls { display: flex; align-items: center; gap: 10px; }
+.public-audio-play { width: 38px; height: 38px; flex: 0 0 auto; border: 0; border-radius: 50%; background: var(--public-accent); color: white; cursor: pointer; }
+.public-audio-controls input[type="range"] { min-width: 0; flex: 1; accent-color: var(--public-accent); }
+.public-audio-controls select { border: 1px solid var(--public-line); border-radius: 6px; padding: 6px; background: white; }
+.public-audio-time { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--public-muted); }
+.public-music-section { display: grid; gap: 12px; margin: 28px 0; }
+.public-music-section h2 { margin: 0; font-family: var(--font-display); font-size: clamp(1.4rem, 3vw, 2rem); }
+.public-music-card { padding: 14px 16px; border: 1px solid var(--public-line); border-radius: 10px; }
+.public-music-card p { margin: 0 0 8px; font-size: 13px; color: var(--public-muted); }
+.public-music-card audio { width: 100%; }
+.public-music-card a { color: var(--public-ink); text-underline-offset: .2em; }
+.public-music-embed { display: block; width: 100%; min-height: 152px; border: 0; border-radius: 8px; }
+.public-book-cta { margin: 36px 0; padding: 24px; border-radius: 12px; background: var(--public-soft); }
+.public-book-cta p { margin: 0; }
+
+@media (max-width: 767px) {
+  .book-showcase-card { grid-template-columns: 1fr; gap: 22px; }
+  .book-showcase-cover { aspect-ratio: 4 / 3; }
+  .book-showcase-actions,
+  .book-preview-actions { flex-direction: column; align-items: stretch; gap: 12px; }
+  .book-showcase-actions > *,
+  .book-preview-actions > * { box-sizing: border-box; width: 100%; }
+  .book-showcase-actions .book-showcase-toggle { margin: 0; }
+  .book-preview-actions .book-preview-controls { justify-content: space-between; }
+  .book-preview-spread { display: block; min-height: 0; }
+  .book-preview-page-text:nth-of-type(2) { display: none; }
+  .book-preview-page-text { min-height: 390px; padding: 28px 24px; }
+  .book-preview-hint-desktop { display: none; }
+  .book-preview-hint-mobile { display: inline; }
+  .public-audio-controls { gap: 6px; }
+  .public-audio-time { font-size: 10px; }
+  .public-audio-controls select { padding: 5px 2px; }
 }
 
 .book-showcase-fallback a:hover {

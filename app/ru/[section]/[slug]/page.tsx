@@ -44,6 +44,15 @@ type ArticleView = {
   backLabel: string;
   richDemo: boolean;
   terms: DemoTerm[];
+  media?: {
+    trailerUrl: string | null;
+    trailerPosterUrl: string | null;
+    authorAudioUrl: string | null;
+    originalMusicUrl: string | null;
+    yandexMusicUrl: string | null;
+    spotifyUrl: string | null;
+    bookRelationship: "standalone" | "included" | "excerpt";
+  };
 };
 
 function sectionLabel(section: Exclude<PublicDocumentSection, null>): string {
@@ -107,6 +116,7 @@ async function resolveArticle(
       backLabel: "Статьи",
       richDemo: true,
       terms: DEMO_TERMS,
+      media: undefined,
     };
   }
 
@@ -134,6 +144,15 @@ async function resolveArticle(
       : null,
     related,
     terms,
+    media: {
+      trailerUrl: document.trailer_youtube_url ?? null,
+      trailerPosterUrl: document.trailer_poster_url ?? null,
+      authorAudioUrl: document.author_audio_url ?? null,
+      originalMusicUrl: document.original_music_url ?? null,
+      yandexMusicUrl: document.yandex_music_url ?? null,
+      spotifyUrl: document.spotify_url ?? null,
+      bookRelationship: document.book_relationship ?? "standalone",
+    },
     backHref: publicSectionPath(documentSection),
     backLabel: sectionLabel(documentSection),
     richDemo: false,
@@ -188,6 +207,13 @@ export default async function PublicDocumentPage({
           videoYoutubeId={article.richDemo ? DEMO_ARTICLE.videoYoutubeId : null}
           hasAudio={article.richDemo}
           hasPresentation={article.richDemo}
+          trailerUrl={article.media?.trailerUrl}
+          trailerPosterUrl={article.media?.trailerPosterUrl}
+          authorAudioUrl={article.media?.authorAudioUrl}
+          originalMusicUrl={article.media?.originalMusicUrl}
+          yandexMusicUrl={article.media?.yandexMusicUrl}
+          spotifyUrl={article.media?.spotifyUrl}
+          bookRelationship={article.media?.bookRelationship}
         />
 
         <RecommendedArticles items={article.related} heading="Рекомендую" />

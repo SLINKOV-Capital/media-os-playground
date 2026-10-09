@@ -15,7 +15,12 @@ export type ActionResult =
         | "invalid_slug"
         | "not_found"
         | "published_locked"
-        | "type_in_use";
+        | "type_in_use"
+        | "invalid_url"
+        | "invalid_relationship"
+        | "invalid_order"
+        | "card_text_too_long"
+        | "excerpt_too_long";
       count?: number;
     };
 
@@ -38,6 +43,11 @@ export const ACTION_ERROR_MESSAGES: Record<
     "Нельзя изменить: документ уже публиковался на сайте",
   type_in_use:
     "Нельзя удалить тип: он используется в документах. Сначала измените тип этих документов.",
+  invalid_url: "Проверьте URL: укажите полный адрес страницы или файла",
+  invalid_relationship: "Выберите доступный тип связи с книгой",
+  invalid_order: "Порядок показа должен быть целым числом от нуля",
+  card_text_too_long: "Текст карточки не должен превышать 400 знаков",
+  excerpt_too_long: "Отрывок для витрины книги не должен превышать 3000 знаков",
 };
 
 export function formatActionError(
