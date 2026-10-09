@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+export const preferredRegion = "arn1";
+
 export const metadata: Metadata = {
   verification: {
     google: "jAJU5wdQSjNvG7ZyIgMJjWQHKkvJ6e32F04eEIC-oqg",
