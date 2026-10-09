@@ -2,6 +2,7 @@
 
 import { updateDocumentMedia } from "@/app/documents/actions";
 import { formatActionError } from "@/lib/actionResult";
+import { downloadBookPreviewCard } from "@/lib/bookPreviewCard";
 import type { Document } from "@/lib/types";
 import { createClient } from "@/lib/supabase/client";
 import { MATERIAL_IMAGES_BUCKET, materialImageStoragePath } from "@/lib/storagePaths";
@@ -14,6 +15,7 @@ export function DocumentMediaBlock({ document }: { document: Document }) {
   const [error, setError] = useState("");
   const [posterUrl, setPosterUrl] = useState(document.trailer_poster_url ?? "");
   const [audioUrl, setAudioUrl] = useState(document.original_music_url ?? "");
+  const [bookCardText, setBookCardText] = useState(document.book_card_text ?? "");
   const [uploading, setUploading] = useState(false);
   const fields = [
     ["trailer_youtube_url", "YouTube URL трейлера"],
@@ -89,8 +91,9 @@ export function DocumentMediaBlock({ document }: { document: Document }) {
         </label>
         <div className="doc-media-grid">
           <label className="doc-media-field"><span>Порядок показа отрывка</span><input className="doc-site-preview-input" type="number" min="0" name="book_preview_order" defaultValue={document.book_preview_order ?? ""} /></label>
-          <label className="doc-media-field"><span>Текст для карточки соцсетей (до 400 знаков)</span><textarea className="doc-site-preview-input" name="book_card_text" maxLength={400} rows={3} defaultValue={document.book_card_text ?? ""} /></label>
+          <label className="doc-media-field"><span>Текст для карточки соцсетей (до 400 знаков)</span><textarea className="doc-site-preview-input" name="book_card_text" maxLength={400} rows={3} value={bookCardText} onChange={(event) => setBookCardText(event.target.value)} /></label>
         </div>
+        <button className="action-btn" type="button" disabled={!bookCardText.trim()} onClick={() => downloadBookPreviewCard({ id: document.id, title: document.title, text: bookCardText })}>Скачать PNG 1080×1350</button>
         <button className="action-btn" type="submit" disabled={pending || uploading}>{uploading ? "Загружаю файл…" : pending ? "Сохраняю…" : "Сохранить медиа"}</button>
         {error ? <p className="doc-site-error" role="alert">{error}</p> : null}
       </form>

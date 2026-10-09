@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { downloadBookPreviewCard } from "@/lib/bookPreviewCard";
 
 const BOOK = {
   title: "Поговорим без слайдов",
@@ -16,66 +17,6 @@ export type BookPreviewFragment = { id: string; title: string; text: string; car
 function excerptEnding(text: string) {
   const trimmed = text.trimEnd();
   return /(?:\.{2,}|…+|\u22ef+|\u2026)$/.test(trimmed) ? trimmed : `${trimmed}\n\n……………`;
-}
-
-function downloadCard(fragment: BookPreviewFragment) {
-  const text = fragment.cardText?.trim();
-  if (!text) return;
-  const canvas = document.createElement("canvas");
-  canvas.width = 1080;
-  canvas.height = 1350;
-  const context = canvas.getContext("2d");
-  if (!context) return;
-  context.fillStyle = "#f4efe5";
-  context.fillRect(0, 0, 1080, 1350);
-  context.fillStyle = "#1b1a18";
-  context.fillRect(70, 70, 940, 1210);
-  context.fillStyle = "#f4efe5";
-  context.textBaseline = "top";
-  context.font = "600 28px Arial, sans-serif";
-  context.fillText("ДМИТРИЙ СЛИНЬКОВ", 130, 130);
-  context.font = "600 34px Arial, sans-serif";
-  context.fillText("ПОГОВОРИМ БЕЗ СЛАЙДОВ", 130, 190);
-  context.fillStyle = "#ffffff";
-  const maxWidth = 820;
-  let fontSize = 42;
-  let lines: string[] = [];
-  const maxHeight = 850;
-  while (fontSize >= 12) {
-    context.font = `${fontSize}px Georgia, serif`;
-    lines = [];
-    let line = "";
-    for (const word of text.split(/\s+/)) {
-      const next = line ? `${line} ${word}` : word;
-      if (context.measureText(next).width > maxWidth && line) { lines.push(line); line = word; }
-      else line = next;
-    }
-    if (line) lines.push(line);
-    if (lines.length * Math.round(fontSize * 1.4) <= maxHeight) break;
-    fontSize -= 2;
-  }
-  if (lines.length * Math.round(fontSize * 1.4) > maxHeight) {
-    context.font = "12px Georgia, serif";
-    lines = [];
-    let line = "";
-    for (const word of text.split(/\s+/)) {
-      const next = line ? `${line} ${word}` : word;
-      if (context.measureText(next).width > maxWidth && line) { lines.push(line); line = word; }
-      else line = next;
-    }
-    if (line) lines.push(line);
-  }
-  const lineHeight = Math.round(fontSize * 1.4);
-  const top = Math.max(310, Math.round((1100 - lines.length * lineHeight) / 2));
-  lines.forEach((value, index) => context.fillText(value, 130, top + index * lineHeight));
-  context.fillStyle = "#c9c0b2";
-  context.font = "26px Arial, sans-serif";
-  context.fillText(fragment.title, 130, 1160);
-  context.fillText("soloten.com/ru/books", 130, 1210);
-  const anchor = document.createElement("a");
-  anchor.download = `pogovorim-${fragment.id}.png`;
-  anchor.href = canvas.toDataURL("image/png");
-  anchor.click();
 }
 
 export function BooksShowcase({ fragments, isAuthor }: { fragments: BookPreviewFragment[]; isAuthor: boolean }) {
@@ -153,14 +94,14 @@ export function BooksShowcase({ fragments, isAuthor }: { fragments: BookPreviewF
                     <p className="book-preview-page-number">{firstFragmentIndex + 1}</p>
                     <p className="book-preview-story-title">{activeFragment.title}</p>
                     <div className="book-preview-excerpt">{excerptEnding(activeFragment.text)}</div>
-                    {isAuthor ? <button type="button" className="book-preview-download" disabled={!activeFragment.cardText} title={activeFragment.cardText ? "Скачать карточку PNG 1080×1350" : "Добавьте текст карточки в редактор произведения"} onClick={() => downloadCard(activeFragment)}>{activeFragment.cardText ? "Скачать карточку PNG" : "Нет текста карточки"}</button> : null}
+                    {isAuthor ? <button type="button" className="book-preview-download" disabled={!activeFragment.cardText} title={activeFragment.cardText ? "Скачать карточку PNG 1080×1350" : "Добавьте текст карточки в редактор произведения"} onClick={() => downloadBookPreviewCard({ id: activeFragment.id, title: activeFragment.title, text: activeFragment.cardText ?? "" })}>{activeFragment.cardText ? "Скачать карточку PNG" : "Нет текста карточки"}</button> : null}
                   </article>
                   {nextFragment ? (
                     <article className="book-preview-page book-preview-page-text" key={nextFragment.id}>
                       <p className="book-preview-page-number">{firstFragmentIndex + 2}</p>
                       <p className="book-preview-story-title">{nextFragment.title}</p>
                       <div className="book-preview-excerpt">{excerptEnding(nextFragment.text)}</div>
-                      {isAuthor ? <button type="button" className="book-preview-download" disabled={!nextFragment.cardText} title={nextFragment.cardText ? "Скачать карточку PNG 1080×1350" : "Добавьте текст карточки в редактор произведения"} onClick={() => downloadCard(nextFragment)}>{nextFragment.cardText ? "Скачать карточку PNG" : "Нет текста карточки"}</button> : null}
+                      {isAuthor ? <button type="button" className="book-preview-download" disabled={!nextFragment.cardText} title={nextFragment.cardText ? "Скачать карточку PNG 1080×1350" : "Добавьте текст карточки в редактор произведения"} onClick={() => downloadBookPreviewCard({ id: nextFragment.id, title: nextFragment.title, text: nextFragment.cardText ?? "" })}>{nextFragment.cardText ? "Скачать карточку PNG" : "Нет текста карточки"}</button> : null}
                     </article>
                   ) : (
                     <div className="book-preview-page book-preview-page-blank" aria-hidden="true" />
