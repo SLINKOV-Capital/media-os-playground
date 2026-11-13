@@ -24,7 +24,6 @@ const UUID_PATTERN =
 type CreateUploadedImageMaterialInput = {
   materialId: string;
   documentId: string;
-  actionId?: string;
   title: string;
   extension: MaterialImageExtension;
 };
@@ -45,7 +44,6 @@ export async function getMaterialUploadUserId(): Promise<
 export async function createUploadedImageMaterial({
   materialId,
   documentId,
-  actionId,
   title,
   extension,
 }: CreateUploadedImageMaterialInput): Promise<
@@ -75,16 +73,6 @@ export async function createUploadedImageMaterial({
     .maybeSingle();
   if (!document) return { ok: false, error: "Документ не найден" };
 
-  if (actionId) {
-    const { data: action } = await supabase
-      .from("actions")
-      .select("id")
-      .eq("id", actionId)
-      .eq("document_id", documentId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (!action) return { ok: false, error: "Действие не найдено" };
-  }
 
   const { data: materials } = await supabase
     .from("materials")
@@ -131,25 +119,6 @@ export async function createUploadedImageMaterial({
     await supabase.from("materials").delete().eq("id", materialId).eq("user_id", user.id);
     console.error("Failed to link uploaded image Material:", linkError.message);
     return { ok: false, error: "Не удалось связать Material с документом" };
-  }
-
-  if (actionId) {
-    const { error: actionLinkError } = await supabase.from("action_materials").insert({
-      action_id: actionId,
-      material_id: materialId,
-      user_id: user.id,
-    });
-    if (actionLinkError) {
-      await supabase
-        .from("document_materials")
-        .delete()
-        .eq("document_id", documentId)
-        .eq("material_id", materialId)
-        .eq("user_id", user.id);
-      await supabase.from("materials").delete().eq("id", materialId).eq("user_id", user.id);
-      console.error("Failed to link uploaded image to action:", actionLinkError.message);
-      return { ok: false, error: "Не удалось связать Material с действием" };
-    }
   }
 
   revalidatePath("/materials");

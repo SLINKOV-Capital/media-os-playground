@@ -109,6 +109,8 @@ export type Material = {
   preview_url: string | null;
   created_at: string;
   updated_at: string;
+  archived_at?: string | null;
+  submission_id?: string | null;
 };
 
 export type DocumentMaterial = {

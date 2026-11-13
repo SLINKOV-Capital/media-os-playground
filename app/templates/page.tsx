@@ -56,7 +56,7 @@ export default async function TemplatesPage() {
               aria-hidden="true"
             >
               <span>Тип документа</span>
-              <span>Действий</span>
+              <span>Для публикации</span>
             </div>
             {templates.map((template) => (
               <div
@@ -70,9 +70,7 @@ export default async function TemplatesPage() {
                   <span className="collection-primary">
                     {template.document_type}
                   </span>
-                  <span className="collection-meta">
-                    {template.action_titles.length}
-                  </span>
+                  <span className="collection-meta">Тип документа</span>
                 </Link>
                 <div className="collection-row-actions">
                   <DeleteWorkflowTemplateButton id={template.id} />

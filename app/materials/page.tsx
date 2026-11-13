@@ -9,13 +9,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 type MaterialsPageProps = {
-  searchParams: Promise<{ q?: string; type?: string }>;
+  searchParams: Promise<{ q?: string; type?: string; archived?: string }>;
 };
 
 export default async function MaterialsPage({
   searchParams,
 }: MaterialsPageProps) {
-  const { q, type } = await searchParams;
+  const { q, type, archived } = await searchParams;
+  const showArchived = archived === "true";
 
   const supabase = await createClient();
   const {
@@ -31,6 +32,8 @@ export default async function MaterialsPage({
     .select("*")
     .eq("user_id", user.id)
     .order("title", { ascending: true });
+
+  query = showArchived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
 
   if (q?.trim()) {
     query = query.ilike("title", `%${q.trim()}%`);
@@ -100,6 +103,9 @@ export default async function MaterialsPage({
             </p>
           </div>
           <div className="materials-header-actions">
+            <Link href={showArchived ? "/materials" : "/materials?archived=true"} className="ghost-button">
+              {showArchived ? "Активные материалы" : "Архив"}
+            </Link>
             <Link href="/materials/batch" className="ghost-button">
               Загрузить изображения
             </Link>
@@ -111,6 +117,7 @@ export default async function MaterialsPage({
 
         <div className="materials-toolbar">
           <form method="get" className="materials-search-form">
+            {showArchived && <input type="hidden" name="archived" value="true" />}
             {activeType && (
               <input type="hidden" name="type" value={activeType} />
             )}
@@ -126,9 +133,7 @@ export default async function MaterialsPage({
           <div className="materials-type-filters">
             <Link
               href={
-                q?.trim()
-                  ? `/materials?q=${encodeURIComponent(q.trim())}`
-                  : "/materials"
+                `${showArchived ? "/materials?archived=true" : "/materials"}${q?.trim() ? `${showArchived ? "&" : "?"}q=${encodeURIComponent(q.trim())}` : ""}`
               }
               className={`material-type-filter${activeType === "" ? " is-active" : ""}`}
             >
@@ -139,6 +144,7 @@ export default async function MaterialsPage({
               if (q?.trim()) {
                 params.set("q", q.trim());
               }
+              if (showArchived) params.set("archived", "true");
               params.set("type", item.value);
 
               return (
@@ -166,7 +172,7 @@ export default async function MaterialsPage({
             )}
           </div>
         ) : (
-          <MaterialsListEditor materials={materials} />
+          <MaterialsListEditor materials={materials} archived={showArchived} />
         )}
       </div>
     </AppShell>

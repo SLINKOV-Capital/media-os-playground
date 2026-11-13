@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-export default async function NewDocumentPage() {
+export default async function NewDocumentPage({ searchParams }: { searchParams: Promise<{ manager_project_id?: string; manager_task_id?: string }> }) {
+  const params = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -50,6 +51,8 @@ export default async function NewDocumentPage() {
           </div>
         ) : (
           <form action={createDocument} className="notion-form notion-form-page">
+            {params.manager_project_id && <input type="hidden" name="manager_project_id" value={params.manager_project_id} />}
+            {params.manager_task_id && <input type="hidden" name="manager_task_id" value={params.manager_task_id} />}
             <div className="form-field">
               <label htmlFor="title" className="form-field-label">
                 Название

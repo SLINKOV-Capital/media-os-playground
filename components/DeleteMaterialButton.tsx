@@ -1,17 +1,17 @@
 "use client";
 
-import { deleteMaterial } from "@/app/documents/actions";
+import { deleteMaterial, restoreMaterial } from "@/app/documents/actions";
 import { formatActionError } from "@/lib/actionResult";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
-export function DeleteMaterialButton({ materialId }: { materialId: string }) {
+export function DeleteMaterialButton({ materialId, archived = false }: { materialId: string; archived?: boolean }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
-    if (!window.confirm("Удалить материал? Связи с документами тоже удалятся.")) {
+    if (!window.confirm(archived ? "Восстановить материал?" : "Переместить материал в архив? Связи и файлы сохранятся.")) {
       return;
     }
 
@@ -19,14 +19,14 @@ export function DeleteMaterialButton({ materialId }: { materialId: string }) {
     startTransition(async () => {
       const formData = new FormData();
       formData.set("id", materialId);
-      const result = await deleteMaterial(formData);
+      const result = archived ? await restoreMaterial(formData) : await deleteMaterial(formData);
 
       if (!result.ok) {
         setError(formatActionError(result));
         return;
       }
 
-      router.push("/materials");
+      router.push(archived ? "/materials" : "/materials?archived=true");
       router.refresh();
     });
   }
@@ -39,7 +39,7 @@ export function DeleteMaterialButton({ materialId }: { materialId: string }) {
         disabled={isPending}
         onClick={handleDelete}
       >
-        {isPending ? "Удаление…" : "Удалить материал"}
+        {isPending ? (archived ? "Восстанавливаю…" : "Перемещаю…") : (archived ? "Восстановить материал" : "В архив")}
       </button>
       {error && <p className="material-preview-error">{error}</p>}
     </div>

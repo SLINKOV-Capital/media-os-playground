@@ -22,19 +22,20 @@ Media OS состоит из двух частей:
 
 ## Env-переменные
 
-В коде используются **только две** переменные окружения:
+В коде используются следующие переменные окружения:
 
 | Переменная | Где используется | Обязательна |
 |------------|------------------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | `lib/supabase/client.ts`, `server.ts`, `middleware.ts` | Да |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | те же файлы | Да |
-
-Других `process.env.*` в проекте нет.
+| `MCP_OAUTH_ENCRYPTION_KEY` | OAuth authorization codes и MCP access/refresh tokens | Только для ChatGPT MCP; sensitive secret |
 
 **Не используются и не нужны для Cockpit:**
 
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` (проект использует publishable key)
+
+Для production OAuth-коннектора `MCP_OAUTH_ENCRYPTION_KEY` должен храниться только в Vercel как Secret. Это 32 случайных байта в base64; никогда не добавлять его в git или `NEXT_PUBLIC_*`.
 
 Hardcoded `localhost`, `vercel.app` или `soloten.com` в коде отсутствуют.
 
@@ -57,9 +58,41 @@ Hardcoded `localhost`, `vercel.app` или `soloten.com` в коде отсут�
 | Build Command | `next build` (default) |
 | Output Directory | default (Next.js App Router) |
 | Install Command | `npm install` (default) |
-| Node.js | default Vercel (версия не зафиксирована в репо) |
+| Node.js | 24.x (настройка production-проекта Vercel) |
 
 `vercel.json` не требуется. `next.config.ts` — пустой объект, без локальных путей.
+
+### Рабочая процедура production-деплоя
+
+Production проекта `media-os-playground` деплоится из текущей локальной рабочей копии через Vercel CLI. Автодеплой Git не является источником подготовленного локального состояния: он может развернуть другой commit из `main`.
+
+Выполнять из корня репозитория `/Users/slinkov/Documents/MediaOSLab`:
+
+```bash
+npm run build
+vercel whoami
+vercel link --yes --project media-os-playground --scope slinkov-capitals-projects
+vercel deploy --prod --yes --scope slinkov-capitals-projects
+```
+
+Если `vercel whoami` сообщает, что CLI не авторизован, выполнить `vercel login`, открыть ссылку из терминала и завершить вход в команду `slinkov-capital`. Затем повторить `vercel whoami` и остальные команды. Перед деплоем проверить, что `vercel project ls --scope slinkov-capitals-projects` показывает `media-os-playground`, а `.vercel/repo.json` связывает его с project ID `prj_4lUGfpXzORrnxS3En1MbDR83Xani` и team ID `team_BsmQ7ZEi3ZykeIaEsm5kEvsI`.
+
+CLI при связывании может получить свежий `VERCEL_OIDC_TOKEN` и добавить широкое правило `.env*` в `.gitignore`. Не коммитить токен; проверить `.gitignore`, чтобы локальные примеры `.env*.example` не стали игнорироваться. Не печатать и не копировать значения секретов в логи.
+
+Команда `vercel deploy --prod` отправляет полный source snapshot рабочей копии и собирает его на Vercel. После завершения назначить custom domain на полученный production URL и проверить статус:
+
+```bash
+vercel alias set <deployment-url> app.soloten.com --scope slinkov-capitals-projects
+vercel inspect app.soloten.com --scope slinkov-capitals-projects
+```
+
+`deployment-url` — URL, напечатанный успешной командой deploy. После alias проверить, что `vercel inspect` показывает именно новый deployment с `status Ready`.
+
+Также проверить `https://app.soloten.com/manager`: сессия пользователя должна открыть «Диспетчер», без сессии ожидается HTTP 307 на `/slinkov-cockpit-login`. Проверять визуальную разметку нужно в браузере с активной пользовательской сессией.
+
+Для подключения MediaOS в ChatGPT используется MCP URL `https://app.soloten.com/api/mcp`. Требуемые discovery endpoints, OAuth flow и полный список tools описаны в [mediaos-chatgpt-mcp.md](mediaos-chatgpt-mcp.md). При обновлении OAuth ключа пользователям потребуется повторно подключить MediaOS.
+
+Не использовать сокращённый `files` snapshot через Vercel API для этого приложения: неполный source может создать READY deployment и переназначить production-алиасы, хотя в нём отсутствуют файлы приложения. Для production использовать CLI-команду выше.
 
 ### Environment Variables
 

@@ -7,6 +7,7 @@ import { useCallback, useState } from "react";
 
 const navItems = [
   { href: "/today", label: "Сегодня" },
+  { href: "/manager", label: "Диспетчер" },
   {
     href: "/documents",
     label: "Документы",
@@ -27,6 +28,8 @@ function isActive(pathname: string, href: string) {
   if (href === "/documents") {
     return pathname === "/documents" || pathname.startsWith("/documents/");
   }
+
+  if (href === "/manager") return pathname === "/manager" || pathname.startsWith("/manager/");
 
   if (href === "/templates") {
     return pathname === "/templates" || pathname.startsWith("/templates/");

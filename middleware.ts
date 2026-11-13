@@ -66,6 +66,10 @@ export async function middleware(request: NextRequest) {
   ).split(":")[0];
   const { pathname } = request.nextUrl;
 
+  if (process.env.NODE_ENV !== "production" && process.env.OAUTH_E2E === "1") {
+    return NextResponse.next();
+  }
+
   if (hostname === "www.soloten.com" && isPublicPath(pathname)) {
     return redirectToHost(request, "soloten.com");
   }

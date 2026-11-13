@@ -165,7 +165,7 @@ export default async function MaterialPage({ params }: MaterialPageProps) {
             availableDocuments={availableDocuments}
           />
 
-          <DeleteMaterialButton materialId={material.id} />
+          <DeleteMaterialButton materialId={material.id} archived={!!material.archived_at} />
         </div>
       </div>
     </AppShell>

@@ -2,11 +2,9 @@
 
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 export default function CockpitLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -29,8 +27,9 @@ export default function CockpitLoginPage() {
       return;
     }
 
-    router.push("/documents");
-    router.refresh();
+    const next = new URLSearchParams(window.location.search).get("next");
+    const safeNext = next?.startsWith("/oauth/authorize?") ? next : "/documents";
+    window.location.assign(safeNext);
   }
 
   return (

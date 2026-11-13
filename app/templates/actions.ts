@@ -6,19 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-function parseActionTitles(raw: string): string[] {
-  return raw
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
-
 function parseDocumentType(formData: FormData): string {
   return String(formData.get("document_type") ?? "").trim();
-}
-
-function parseActionTitlesFromForm(formData: FormData): string[] {
-  return parseActionTitles(String(formData.get("action_titles") ?? ""));
 }
 
 function mapRenameDocumentTypeError(message: string): ActionResult {
@@ -123,7 +112,6 @@ export async function createWorkflowTemplate(formData: FormData): Promise<void> 
   }
 
   const document_type = parseDocumentType(formData);
-  const action_titles = parseActionTitlesFromForm(formData);
 
   if (!document_type) {
     return;
@@ -143,7 +131,7 @@ export async function createWorkflowTemplate(formData: FormData): Promise<void> 
   const { error } = await supabase.from("workflow_templates_v2").insert({
     user_id: user.id,
     document_type,
-    action_titles,
+    action_titles: [],
   });
 
   if (error) {
@@ -167,7 +155,6 @@ export async function updateWorkflowTemplate(formData: FormData): Promise<void> 
 
   const id = String(formData.get("id") ?? "");
   const document_type = parseDocumentType(formData);
-  const action_titles = parseActionTitlesFromForm(formData);
 
   if (!id || !document_type) {
     return;
@@ -199,17 +186,6 @@ export async function updateWorkflowTemplate(formData: FormData): Promise<void> 
       console.error("Failed to rename document type:", renameError.message);
       return;
     }
-  }
-
-  const { error } = await supabase
-    .from("workflow_templates_v2")
-    .update({ action_titles })
-    .eq("id", id)
-    .eq("user_id", user.id);
-
-  if (error) {
-    console.error("Failed to update workflow template:", error.message);
-    return;
   }
 
   revalidateDocumentTypePaths();

@@ -1,6 +1,6 @@
 "use client";
 
-import { bulkDeleteMaterials } from "@/app/documents/actions";
+import { bulkDeleteMaterials, bulkRestoreMaterials } from "@/app/documents/actions";
 import { MaterialImagePreview } from "@/components/MaterialImagePreview";
 import { getMaterialPreviewSrc } from "@/lib/materialPreview";
 import { getMaterialTypeIcon, getMaterialTypeLabel } from "@/lib/materialTypes";
@@ -8,7 +8,7 @@ import type { Material } from "@/lib/types";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 
-export function MaterialsListEditor({ materials }: { materials: Material[] }) {
+export function MaterialsListEditor({ materials, archived = false }: { materials: Material[]; archived?: boolean }) {
   const [items, setItems] = useState(materials);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -48,7 +48,7 @@ export function MaterialsListEditor({ materials }: { materials: Material[] }) {
     setMessage(null);
 
     startTransition(async () => {
-      const result = await bulkDeleteMaterials(ids);
+      const result = archived ? await bulkRestoreMaterials(ids) : await bulkDeleteMaterials(ids);
 
       if (!result.ok) {
         if (result.deletedIds?.length) {
@@ -73,9 +73,6 @@ export function MaterialsListEditor({ materials }: { materials: Material[] }) {
       setSelectedIds(new Set());
       setIsEditing(false);
 
-      if (result.warning) {
-        setMessage(result.warning);
-      }
     });
   }
 
@@ -93,7 +90,7 @@ export function MaterialsListEditor({ materials }: { materials: Material[] }) {
               disabled={selectedIds.size === 0 || isPending}
               onClick={() => setConfirmOpen(true)}
             >
-              {isPending ? "Удаление…" : `Удалить ${selectedIds.size || ""}`.trim()}
+              {isPending ? (archived ? "Восстанавливаю…" : "Перемещаю…") : `${archived ? "Восстановить" : "В архив"} ${selectedIds.size || ""}`.trim()}
             </button>
           </>
         ) : items.length > 0 ? (
@@ -215,13 +212,13 @@ export function MaterialsListEditor({ materials }: { materials: Material[] }) {
       {confirmOpen && (
         <div className="confirm-dialog-backdrop" role="presentation">
           <div className="confirm-dialog" role="dialog" aria-modal="true">
-            <p>Удалить выбранные материалы — {selectedIds.size} шт.?</p>
+            <p>{archived ? "Восстановить выбранные материалы" : "Переместить выбранные материалы в архив"} — {selectedIds.size} шт.?</p>
             <div className="confirm-dialog-actions">
               <button type="button" className="text-button" onClick={() => setConfirmOpen(false)}>
                 Отмена
               </button>
               <button type="button" className="material-bulk-delete-button" onClick={confirmDelete}>
-                Удалить
+                {archived ? "Восстановить" : "В архив"}
               </button>
             </div>
           </div>

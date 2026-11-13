@@ -1,0 +1,63 @@
+openapi: 3.1.0
+info:
+  title: MediaOS Manager API
+  version: 1.0.0
+  description: User-scoped domain operations for projects, tasks, actions, categories, ordering and links.
+servers:
+  - url: https://YOUR_MEDIAOS_HOST
+security:
+  - SupabaseUserJWT: []
+components:
+  securitySchemes:
+    SupabaseUserJWT:
+      type: http
+      scheme: bearer
+      bearerFormat: Supabase access token
+  schemas:
+    Operation:
+      type: object
+      required: [op]
+      properties:
+        op:
+          type: string
+          enum: [create_project, create_task, create_action, update, reorder, link, unlink, complete]
+        kind:
+          type: string
+          enum: [project, task, action]
+        id: { type: string, format: uuid }
+        title: { type: string, maxLength: 500 }
+        category:
+          type: string
+          enum: [ideas, intentions, commitments, projects, wishes]
+        project_id: { type: [string, "null"], format: uuid }
+        task_id: { type: string, format: uuid }
+        due_date: { type: [string, "null"], format: date }
+        event_at: { type: [string, "null"], format: date-time }
+        description: { type: string }
+        completed: { type: boolean }
+        done: { type: boolean }
+        value: { type: boolean }
+paths:
+  /api/v1/manager:
+    get:
+      summary: List or search the authenticated user's projects, tasks, actions and links
+      parameters:
+        - in: query
+          name: q
+          schema: { type: string }
+          description: Case-insensitive search in project/task titles and descriptions.
+      responses:
+        "200": { description: Owner-scoped objects }
+        "401": { description: Missing or invalid Supabase user access token }
+    post:
+      summary: Run one allowlisted manager operation
+      description: No SQL endpoint exists. Every operation is checked against the caller's user ID and Supabase RLS.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Operation" }
+      responses:
+        "200": { description: Operation result }
+        "400": { description: Invalid domain operation }
+        "401": { description: Missing or invalid Supabase user access token }

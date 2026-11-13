@@ -32,7 +32,6 @@ export function NewMaterialImageUpload() {
     const form = inputRef.current?.closest("form");
     const titleInput = form?.elements.namedItem("title");
     const documentInput = form?.elements.namedItem("document_id");
-    const actionInput = form?.elements.namedItem("action_id");
     if (!(titleInput instanceof HTMLInputElement)) return;
 
     const documentId =
@@ -72,8 +71,6 @@ export function NewMaterialImageUpload() {
       const result = await createUploadedImageMaterial({
         materialId,
         documentId,
-        actionId:
-          actionInput instanceof HTMLInputElement ? actionInput.value : "",
         title,
         extension: uploaded.extension,
       });

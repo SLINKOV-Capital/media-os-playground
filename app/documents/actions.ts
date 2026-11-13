@@ -1026,7 +1026,7 @@ export async function deleteMaterial(formData: FormData): Promise<ActionResult> 
 
   const { data: material, error: materialError } = await supabase
     .from("materials")
-    .select("id")
+    .select("id,archived_at")
     .eq("id", materialId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -1035,39 +1035,39 @@ export async function deleteMaterial(formData: FormData): Promise<ActionResult> 
     return { ok: false, error: "not_found" };
   }
 
+  if (material.archived_at) return { ok: true };
+
   const { error: deleteError } = await supabase
     .from("materials")
-    .delete()
+    .update({ archived_at: new Date().toISOString() })
     .eq("id", materialId)
     .eq("user_id", user.id);
 
   if (deleteError) {
-    console.error("Failed to delete material:", deleteError.message);
+    console.error("Failed to archive material:", deleteError.message);
     return { ok: false, error: "not_found" };
   }
 
-  const { error: storageError } = await supabase.storage
-    .from(MATERIAL_PREVIEWS_BUCKET)
-    .remove(materialPreviewStoragePaths(user.id, materialId));
-
-  if (storageError) {
-    console.error("Failed to delete material previews:", storageError.message);
-  }
-
-  const { error: imageStorageError } = await supabase.storage
-    .from(MATERIAL_IMAGES_BUCKET)
-    .remove(materialImageStoragePaths(user.id, materialId));
-
-  if (imageStorageError) {
-    console.error("Failed to delete Material source images:", imageStorageError.message);
-  }
-
   revalidatePath("/materials");
+  revalidatePath(`/materials/${materialId}`);
+  return { ok: true };
+}
+
+export async function restoreMaterial(formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect(COCKPIT_LOGIN_PATH);
+  const materialId = String(formData.get("id") ?? "");
+  if (!materialId) return { ok: false, error: "not_found" };
+  const { data, error } = await supabase.from("materials").update({ archived_at: null }).eq("id", materialId).eq("user_id", user.id).select("id").maybeSingle();
+  if (error || !data) return { ok: false, error: "not_found" };
+  revalidatePath("/materials");
+  revalidatePath(`/materials/${materialId}`);
   return { ok: true };
 }
 
 export type BulkDeleteMaterialsResult =
-  | { ok: true; deletedIds: string[]; warning?: string }
+  | { ok: true; deletedIds: string[] }
   | { ok: false; error: string; deletedIds?: string[] };
 
 export async function bulkDeleteMaterials(
@@ -1092,6 +1092,7 @@ export async function bulkDeleteMaterials(
     .from("materials")
     .select("id")
     .eq("user_id", user.id)
+    .is("archived_at", null)
     .in("id", ids);
 
   if (selectError) {
@@ -1110,14 +1111,15 @@ export async function bulkDeleteMaterials(
 
   const { data: deleted, error: deleteError } = await supabase
     .from("materials")
-    .delete()
+    .update({ archived_at: new Date().toISOString() })
     .eq("user_id", user.id)
+    .is("archived_at", null)
     .in("id", ownedIds)
     .select("id");
 
   if (deleteError) {
-    console.error("Failed to bulk delete materials:", deleteError.message);
-    return { ok: false, error: "Не удалось удалить выбранные материалы" };
+    console.error("Failed to archive materials:", deleteError.message);
+    return { ok: false, error: "Не удалось переместить материалы в архив" };
   }
 
   const deletedIds = (deleted ?? []).map((material) => material.id);
@@ -1125,32 +1127,27 @@ export async function bulkDeleteMaterials(
   if (deletedIds.length !== ownedIds.length) {
     return {
       ok: false,
-      error: `Удалено ${deletedIds.length} из ${ownedIds.length}. Обновите список перед повторной попыткой.`,
+      error: `В архив перемещено ${deletedIds.length} из ${ownedIds.length}. Обновите список перед повторной попыткой.`,
       deletedIds,
     };
   }
 
-  const previewPaths = deletedIds.flatMap((materialId) =>
-    materialPreviewStoragePaths(user.id, materialId)
-  );
-  const imagePaths = deletedIds.flatMap((materialId) =>
-    materialImageStoragePaths(user.id, materialId)
-  );
-  const [{ error: storageError }, { error: imageStorageError }] = await Promise.all([
-    supabase.storage.from(MATERIAL_PREVIEWS_BUCKET).remove(previewPaths),
-    supabase.storage.from(MATERIAL_IMAGES_BUCKET).remove(imagePaths),
-  ]);
-
   revalidatePath("/materials");
+  return { ok: true, deletedIds };
+}
 
-  return storageError || imageStorageError
-    ? {
-        ok: true,
-        deletedIds,
-        warning:
-          "Материалы удалены, но часть файлов изображений не удалось удалить из Storage.",
-      }
-    : { ok: true, deletedIds };
+export async function bulkRestoreMaterials(requestedIds: string[]): Promise<BulkDeleteMaterialsResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Сессия истекла. Войдите снова." };
+  const ids = [...new Set(requestedIds.filter(Boolean))];
+  if (!ids.length || ids.length > 500) return { ok: false, error: "Не выбраны материалы для восстановления" };
+  const { data: rows, error } = await supabase.from("materials").update({ archived_at: null }).eq("user_id", user.id).not("archived_at", "is", null).in("id", ids).select("id");
+  if (error) return { ok: false, error: "Не удалось восстановить выбранные материалы" };
+  const restoredIds = (rows ?? []).map((row) => row.id);
+  if (restoredIds.length !== ids.length) return { ok: false, error: "Часть материалов не найдена в архиве. Обновите страницу.", deletedIds: restoredIds };
+  revalidatePath("/materials");
+  return { ok: true, deletedIds: restoredIds };
 }
 
 export async function createDocument(formData: FormData): Promise<void> {
@@ -1211,6 +1208,18 @@ export async function createDocument(formData: FormData): Promise<void> {
   if (error || !data) {
     console.error("Failed to create document:", error?.message);
     return;
+  }
+
+  const projectId = String(formData.get("manager_project_id") ?? "");
+  const taskId = String(formData.get("manager_task_id") ?? "");
+  if (!!projectId !== !!taskId) {
+    const table = projectId ? "projects" : "tasks";
+    const parentId = projectId || taskId;
+    const { data: parent } = await supabase.from(table).select("id").eq("id", parentId).eq("user_id", user.id).maybeSingle();
+    if (parent) {
+      await supabase.from("work_links").insert({ user_id: user.id, project_id: projectId || null, task_id: taskId || null, document_id: data.id });
+      revalidatePath("/manager");
+    }
   }
 
   revalidatePath("/documents");
@@ -1470,8 +1479,8 @@ export async function linkActionMaterial(
     redirect(COCKPIT_LOGIN_PATH);
   }
 
-  const actionId = String(formData.get("action_id") ?? "");
   const materialId = String(formData.get("material_id") ?? "");
+  const actionId = String(formData.get("action_id") ?? "");
   const documentId = String(formData.get("document_id") ?? "");
 
   if (!actionId || !materialId || !documentId) {
@@ -2009,7 +2018,6 @@ export async function createMaterial(formData: FormData): Promise<void> {
   const file_url_or_path = String(formData.get("file_url_or_path") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim();
   const redirectTarget = String(formData.get("redirect") ?? "");
-  const actionId = String(formData.get("action_id") ?? "");
 
   if (!documentId || !title || !material_type) {
     return;
@@ -2051,19 +2059,6 @@ export async function createMaterial(formData: FormData): Promise<void> {
     );
 
     if (!linked) {
-      return;
-    }
-
-    if (
-      actionId &&
-      !(await linkActionMaterialRecord(
-        supabase,
-        actionId,
-        documentId,
-        existingMaterial.id,
-        user.id
-      ))
-    ) {
       return;
     }
 
@@ -2113,18 +2108,6 @@ export async function createMaterial(formData: FormData): Promise<void> {
           return;
         }
 
-        if (
-          actionId &&
-          !(await linkActionMaterialRecord(
-            supabase,
-            actionId,
-            documentId,
-            duplicate.id,
-            user.id
-          ))
-        ) {
-          return;
-        }
         await revalidateMaterialPublicSites(supabase, duplicate.id, documentId);
 
         if (redirectTarget === "materials") {
@@ -2189,19 +2172,6 @@ export async function createMaterial(formData: FormData): Promise<void> {
     console.error(
       "Failed to create material: document_materials link was not created"
     );
-    return;
-  }
-
-  if (
-    actionId &&
-    !(await linkActionMaterialRecord(
-      supabase,
-      actionId,
-      documentId,
-      material.id,
-      user.id
-    ))
-  ) {
     return;
   }
 

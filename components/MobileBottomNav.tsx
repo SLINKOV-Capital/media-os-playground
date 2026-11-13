@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
+  { href: "/manager", label: "Диспетчер", icon: (<svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5h5v14H4zM10 5h5v9h-5zM16 5h4v5h-4zM16 11h4v8h-4z" stroke="currentColor" strokeWidth="1.6"/></svg>) },
   {
     href: "/today",
     label: "Сегодня",
@@ -87,6 +88,7 @@ const navItems = [
 ];
 
 function isActive(pathname: string, href: string) {
+  if (href === "/manager") return pathname === "/manager" || pathname.startsWith("/manager/");
   if (href === "/documents") {
     return pathname === "/documents" || pathname.startsWith("/documents/");
   }

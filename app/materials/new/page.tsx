@@ -9,12 +9,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 type NewMaterialPageProps = {
-  searchParams: Promise<{ document_id?: string; action_id?: string }>;
+  searchParams: Promise<{ document_id?: string }>;
 };
 
 export default async function NewMaterialPage({ searchParams }: NewMaterialPageProps) {
-  const { document_id: requestedDocumentId, action_id: actionId } =
-    await searchParams;
+  const { document_id: requestedDocumentId } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -62,7 +61,6 @@ export default async function NewMaterialPage({ searchParams }: NewMaterialPageP
                 name="redirect"
                 value={requestedDocumentId ? "document" : "materials"}
               />
-              {actionId && <input type="hidden" name="action_id" value={actionId} />}
 
               <div className="notion-property">
                 <label htmlFor="document_id" className="notion-property-label">

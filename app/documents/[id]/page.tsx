@@ -1,5 +1,4 @@
 import { updateDocumentTitle } from "@/app/documents/actions";
-import { DocumentActionsBlock } from "@/components/DocumentActionsBlock";
 import { DeleteDocumentButton } from "@/components/DeleteDocumentButton";
 import { DocumentMaterialsBlock } from "@/components/DocumentMaterialsBlock";
 import { DocumentImageIssuesBlock } from "@/components/DocumentImageIssuesBlock";
@@ -16,7 +15,6 @@ import { AppShell } from "@/components/AppShell";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { isDocumentSiteLocked } from "@/lib/site";
 import { createClient } from "@/lib/supabase/server";
-import { mapActionsMaterials } from "@/lib/mapActionMaterials";
 import {
   collectMaterialIdsFromLinkRows,
   mapDocumentMaterialsFromRows,
@@ -36,7 +34,6 @@ export default async function DocumentPage({
 }: DocumentPageProps) {
   const { id } = await params;
   const { active } = await searchParams;
-  const activeOnly = active === "1";
 
   const supabase = await createClient();
   const {
@@ -66,7 +63,6 @@ export default async function DocumentPage({
   const document = documentData as Document;
 
   const [
-    { data: actionsData },
     { data: documentMaterialsData },
     { data: imageIssuesData },
     { data: publicationImagesData },
@@ -75,12 +71,6 @@ export default async function DocumentPage({
     { data: candidateDocumentsData },
     { data: templatesData },
   ] = await Promise.all([
-      supabase
-        .from("actions")
-        .select("*, action_materials(material_id, materials(id, title))")
-        .eq("document_id", id)
-        .eq("user_id", user.id)
-        .order("sort_order", { ascending: true }),
       supabase
         .from("document_materials")
         .select("material_id, materials(*)")
@@ -122,7 +112,6 @@ export default async function DocumentPage({
         .order("document_type", { ascending: true }),
     ]);
 
-  const actions = mapActionsMaterials(actionsData ?? []);
   let materials = mapDocumentMaterialsFromRows(documentMaterialsData ?? []);
 
   // Fallback when materials(*) embed returns null but junction rows exist.
@@ -227,13 +216,6 @@ export default async function DocumentPage({
               media={<DocumentMediaBlock document={document} />}
             />
           </DocumentSiteProvider>
-
-          <DocumentActionsBlock
-            documentId={document.id}
-            actions={actions}
-            materials={materials}
-            activeOnly={activeOnly}
-          />
 
           <DocumentMaterialsBlock
             documentId={document.id}

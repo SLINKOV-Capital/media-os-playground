@@ -1,13 +1,11 @@
 import { AppShell } from "@/components/AppShell";
-import { SortableTodayList } from "@/components/SortableTodayList";
 import { TodayNihuyasiSection } from "@/components/TodayNihuyasiSection";
 import { TodayDailyMatrix } from "@/components/TodayDailyMatrix";
-import type { FocusAction } from "@/components/TodayItem";
+import { toggleAction, toggleTask } from "@/app/manager/actions";
 import { COCKPIT_LOGIN_PATH } from "@/lib/authPaths";
 import { createClient } from "@/lib/supabase/server";
 import { createNewsServiceClient } from "@/lib/supabase/newsServer";
 import { formatMoscowIsoDate, formatTodayHeading } from "@/lib/format";
-import { mapActionMaterials } from "@/lib/mapActionMaterials";
 import { normalizeNihuyasiEntry } from "@/lib/nihuyasi";
 import {
   addNewsKeyDays,
@@ -15,7 +13,7 @@ import {
   type NewsQueuePick,
   type NewsQueuePublication,
 } from "@/lib/newsQueueIndicator";
-import type { DailyWritingStatus, Document } from "@/lib/types";
+import type { DailyWritingStatus } from "@/lib/types";
 import { redirect } from "next/navigation";
 
 export default async function TodayPage() {
@@ -46,20 +44,15 @@ export default async function TodayPage() {
     : Promise.resolve({ data: [], error: null });
 
   const [
-    { data: actionsData, error: actionsError },
+    { data: tasksData, error: tasksError },
+    { data: workActionsData, error: workActionsError },
     { data: nihuyasiData, error: nihuyasiError },
     { data: writingData, error: writingError },
     { data: newsPicksData, error: newsPicksError },
   ] =
     await Promise.all([
-      supabase
-        .from("actions")
-        .select(
-          "*, documents(id, title), action_materials(material_id, materials(id, title))"
-        )
-        .eq("today", true)
-        .eq("user_id", user.id)
-        .order("today_sort_order", { ascending: true }),
+      supabase.from("tasks").select("id,title,due_date,event_at,completed,project_id").eq("user_id",user.id).is("archived_at",null).eq("completed",false).or(`due_date.lte.${todayIso},event_at.lte.${todayIso}T20:59:59+00:00`).order("due_date"),
+      supabase.from("actions").select("id,title,task_id,due_date,done,tasks!inner(id,title,due_date,completed,archived_at)").eq("user_id",user.id).eq("done",false).eq("tasks.completed",false).is("tasks.archived_at",null).not("due_date","is",null).lte("due_date",todayIso).order("due_date"),
       supabase
         .from("nihuyasi")
         .select("*")
@@ -86,9 +79,8 @@ export default async function TodayPage() {
         .order("created_at", { ascending: false })
       : { data: [], error: null };
 
-  if (actionsError) {
-    console.error("Failed to fetch focus actions:", actionsError.message);
-  }
+  if (tasksError) console.error("Failed to fetch due tasks:",tasksError.message);
+  if (workActionsError) console.error("Failed to fetch due task actions:",workActionsError.message);
 
   if (nihuyasiError) {
     console.error("Failed to fetch nihuyasi entries:", nihuyasiError.message);
@@ -105,18 +97,6 @@ export default async function TodayPage() {
   if (newsPublicationsError) {
     console.error("Failed to fetch News Service publications:", newsPublicationsError.message);
   }
-
-  const focusActions: FocusAction[] = (actionsData ?? []).map((row) => {
-    const rowData = row as Parameters<typeof mapActionMaterials>[0] & {
-      documents: Pick<Document, "id" | "title">;
-    };
-    const { documents } = rowData;
-
-    return {
-      ...mapActionMaterials(rowData),
-      documents,
-    };
-  });
 
   const nihuyasiEntries = (nihuyasiData ?? []).map((row) =>
     normalizeNihuyasiEntry(row as Record<string, unknown>)
@@ -151,16 +131,7 @@ export default async function TodayPage() {
           nihuyasiEntries={nihuyasiEntries}
         />
 
-        {focusActions.length === 0 ? (
-          <div className="empty-state">
-            <p>
-              Ничего в фокусе. Откройте документ и нажмите «В фокус» у нужного
-              действия.
-            </p>
-          </div>
-        ) : (
-          <SortableTodayList actions={focusActions} />
-        )}
+        <section className="today-work-items"><h2>Задачи и действия по сроку</h2>{(tasksData?.length??0)+(workActionsData?.length??0)===0?<p>Нет просроченных задач и действий или сроков на сегодня.</p>:<ul>{(tasksData??[]).map(t=><li key={`t${t.id}`}><form action={toggleTask}><input type="hidden" name="id" value={t.id}/><button>□</button></form><a href="/manager">{t.title}</a><time>{t.event_at?new Date(t.event_at).toLocaleString("ru-RU",{dateStyle:"short",timeStyle:"short"}):t.due_date}</time></li>)}{(workActionsData??[]).map(a=><li key={`a${a.id}`}><form action={toggleAction}><input type="hidden" name="id" value={a.id}/><button>□</button></form><a href="/manager">↳ {a.title}</a><time>{a.due_date}</time></li>)}</ul>}<a href="/manager">Открыть диспетчер →</a></section>
 
         <TodayNihuyasiSection
           initialEntries={nihuyasiEntries.filter((entry) => entry.date === todayIso)}

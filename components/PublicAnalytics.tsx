@@ -1,11 +1,36 @@
 "use client";
 
 import Script from "next/script";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 const YANDEX_METRIKA_ID = 36623120;
 const GOOGLE_TAG_MANAGER_ID = "GTM-WT7QD9X";
 
+declare global {
+  interface Window {
+    ym?: (counterId: number, method: string, url?: string) => void;
+  }
+}
+
 export function PublicAnalytics() {
+  const pathname = usePathname();
+  const previousLocation = useRef<string | null>(null);
+
+  useEffect(() => {
+    const location = pathname;
+    if (previousLocation.current === null) {
+      previousLocation.current = location;
+      return;
+    }
+    if (previousLocation.current === location) return;
+
+    previousLocation.current = location;
+    if (typeof window.ym === "function") {
+      window.ym(YANDEX_METRIKA_ID, "hit", location);
+    }
+  }, [pathname]);
+
   return (
     <>
       <Script id="google-tag-manager" strategy="afterInteractive">

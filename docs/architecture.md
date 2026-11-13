@@ -31,7 +31,7 @@
 
 ## Drag-and-drop (dnd-kit)
 
-- Списки с reorder: `SortableActionsList` (document actions), `SortableTodayList` (today).
+- Списки с reorder: `ManagerBoard` (projects/tasks across five Kanban categories) and `SortableDocumentsList`.
 - `useSortable` возвращает `attributes` с `aria-describedby` (IDs вида `DndDescribedBy-N`).
 - **Hydration:** эти атрибуты нельзя применять на SSR — счётчик ID расходится между server и client. Решение: `lib/useClientDragHandleProps.ts` — drag handle props только после mount.
 - У каждого `DndContext` — стабильный `id` (`document-actions-dnd`, `today-actions-dnd`).
@@ -51,7 +51,8 @@
 
 | Файл | Операции |
 |------|----------|
-| `app/documents/actions.ts` | documents, actions, action_materials, generateActions, reorder, toggle done/today, **updateDocument** (план) |
+| `app/documents/actions.ts` | documents, materials, document_materials and publication data |
+| `app/manager/actions.ts` | projects, tasks, task actions, category/order, dates, completion and links |
 | `app/templates/actions.ts` | workflow_templates_v2 CRUD, **updateTemplate** (план) |
 | `app/materials/actions.ts` (план) | global materials CRUD, document_materials link/unlink, search |
 | `app/nihuyasi/actions.ts` (план) | nihuyasi CRUD |
@@ -60,7 +61,16 @@
 
 ## Сущности БД
 
-### v0.3 (план — global materials + nihuyasi)
+### MediaOS 2.0 — операционная модель
+
+- `projects → tasks → actions`; task completion is independent from action completion.
+- Projects/tasks use `ideas`, `intentions`, `commitments`, `projects`, `wishes` as Kanban categories, not execution states.
+- `sort_order` stores manual priority; tasks can have a `due_date` and `event_at` timestamp.
+- `work_links` connects projects/tasks with documents or materials.
+- `/api/v1/manager` exposes allowlisted domain operations under the user's Supabase JWT and RLS.
+- `/api/manager/export` returns a ZIP of Markdown files and a JSON manifest without credentials.
+
+### Публикационная модель
 
 **documents**
 - `title` — unique `(user_id, title)` *(новое)*
@@ -77,16 +87,15 @@
 - unique: `(document_id, material_id)`
 
 **actions**
-- `title`, `document_id`, `material_id` (deprecated)
-- `done`, `today`, `sort_order`, `today_sort_order`
-- `user_id`, timestamps
+- `title`, `task_id`, `description`, `due_date`, `done`, `sort_order`
+- `user_id`, timestamps; the former document checklist is retired
 
 **action_materials**
 - many-to-many actions ↔ materials
 - unique: `(action_id, material_id)`
 
 **workflow_templates_v2**
-- `document_type`, `action_titles[]`
+- `document_type`, `action_titles[]` (legacy field retained as data; no longer shown or used for publication workflow)
 - unique: `(user_id, document_type)`
 - **Справочник типов документов:** `documents.document_type` должен соответствовать `document_type` одного из шаблонов пользователя (по смыслу, text FK без constraint).
 - Переименование типа в шаблоне — RPC `rename_document_type` (миграция `012`): атомарно обновляет шаблон и все documents со старым типом.
@@ -155,6 +164,7 @@ Protected prefixes:
 | # | Файл | Содержание |
 |---|------|------------|
 | 001 | `001_initial.sql` | tasks, projects, workflow_templates (legacy) |
+| 20261112090000 | `20261112090000_task_manager.sql` | projects/tasks activation, task actions and links; removal of document checklist actions |
 | 002 | `002_v0_2_documents.sql` | documents, materials, actions, workflow_templates_v2 |
 | 003–006 | actions flags, sort orders | |
 | 007 | `007_action_materials.sql` | action_materials junction |
